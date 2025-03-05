@@ -103,12 +103,39 @@ lim = length(rlla)-(length(rlla)-length(recef));
 figure(3)
 geoplot(squeeze(rlla(1,1,1:lim)),squeeze(rlla(1,2,1:lim)))
 % geobasemap('satellite'); 
-% Annotate the plot with time
-for i = floor(linspace(1,length(tsince),10))
-    % Adding text annotations next to each satellite pass
-    text(squeeze(rlla(1,1,i)),squeeze(rlla(1,2,i)), num2str(tsince(1,i)), ...
-        'Color', 'black', 'FontSize', 7, 'HorizontalAlignment', 'center');
+
+
+
+% Annotate the plot with time-------------------------------------------------------------------------------------
+
+% Add custom data cursor mode to show the time when hovering
+dcm = datacursormode(gcf);  % Get the data cursor mode for the current figure
+set(dcm, 'Enable', 'on');  % Enable data cursor
+
+% Customize the data cursor display
+set(dcm, 'UpdateFcn', @(obj, event) displayTime(obj, event, ...
+    squeeze(rlla(1,1,1:lim)), squeeze(rlla(1,2,1:lim)), tsince(1,:)));
+
+% Custom function to display time on hover
+function output_txt = displayTime(~, event_obj, latitudes, longitudes, times)
+    % Get the index of the point clicked
+    idx = event_obj.DataIndex;
+    
+    % Get the corresponding latitude, longitude, and time
+    lat = latitudes(idx);
+    lon = longitudes(idx);
+    % timeStr = datestr(times(idx), 'yyyy-mm-dd HH:MM:SS');
+    timeStr = num2str(times(idx));
+
+    % Output the time, latitude, and longitude as the label
+    output_txt = {['Time: ', timeStr], ...
+                  ['Latitude: ', num2str(lat)], ...
+                  ['Longitude: ', num2str(lon)]};
 end
+
+
+
+
 hold on
 for i = 2:n_sats
     geoplot(squeeze(rlla(i,1,1:lim)),squeeze(rlla(i,2,1:lim)))
