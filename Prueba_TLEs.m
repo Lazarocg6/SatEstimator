@@ -26,15 +26,23 @@ addpath('SGP4_Vectorized')
 
 latETSIT = 40.45206046037957;
 lonETSIT = -3.726407299669201;
-elETSIT = 670;
+elETSIT = 670;%altitud media
 
 latVill = 40.6223011985758;
 lonVill = -4.010124224894723;
-elVill = 930;
+elVill = 930;%altitud media
 
 latGRAVES = 47.34813145826119;
 lonGRAVES = 5.51487314868131;
 elGRAVES = 180; %altitud media
+
+% Coordenadas que se van a usar
+latTX = latGRAVES;
+lonTX = lonGRAVES;
+elTX = elGRAVES;
+latRX = latVill;
+lonRX = lonVill;
+elRX = elVill;
 
 duracion = 300;% En minutos, 'duracion' minutos antes y despues del momento actual 
 precision = 60/60;% En minutos
@@ -63,8 +71,8 @@ updateTLE(6,sats,filenameTLEs);
 
 %bistatic parameters
 
-[bistaticRange,R1,R2,llaDIST,ecefDIST] = bistaticParams(latGRAVES,lonGRAVES,elGRAVES,latVill, ...
-    lonVill,elVill,recef*1000,f,Re);
+[bistaticRange,R1,R2,llaDIST,ecefDIST] = bistaticParams(latTX,lonTX,elTX,latRX, ...
+    lonRX,elRX,recef*1000,f,Re);
 
 %Figuras
 
@@ -101,20 +109,33 @@ legend('ISS','Starlink','OneWeb','Location','best')
 lim = length(rlla)-(length(rlla)-length(recef));
 
 figure(3)
-geoplot(squeeze(rlla(1,1,1:lim)),squeeze(rlla(1,2,1:lim)))
-% geobasemap('satellite'); 
-
-
+geoplot(squeeze(rlla(1,1,1:lim)),squeeze(rlla(1,2,1:lim)),'DisplayName','ISS')
+geolimits([35 50],[-14 14])
+hold on
+geoplot(latTX,lonTX,'xr','DisplayName', 'TX')
+geoplot(latRX,lonRX,'xr','DisplayName', 'RX')
+geobasemap('darkwater'); 
 
 % Annotate the plot with time-------------------------------------------------------------------------------------
 
 % Add custom data cursor mode to show the time when hovering
 dcm = datacursormode(gcf);  % Get the data cursor mode for the current figure
-set(dcm, 'Enable', 'on');  % Enable data cursor
+% set(dcm, 'Enable', 'on');  % Enable data cursor
 
 % Customize the data cursor display
 set(dcm, 'UpdateFcn', @(obj, event) displayTime(obj, event, ...
     squeeze(rlla(1,1,1:lim)), squeeze(rlla(1,2,1:lim)), tsince(1,:)));
+
+for i = 2:n_sats
+    geoplot(squeeze(rlla(i,1,1:lim)),squeeze(rlla(i,2,1:lim)))
+end
+for i = 1:n_sats
+    geoplot(squeeze(rlla(i,1,floor(lim/2))),squeeze(rlla(i,2,floor(lim/2))),'ok')
+    set(dcm, 'UpdateFcn', @(obj, event) displayTime(obj, event, ...
+    squeeze(rlla(1,1,1:lim)), squeeze(rlla(1,2,1:lim)), tsince(1,:)));
+end
+hold off
+legend('Location','northeast')
 
 % Custom function to display time on hover
 function output_txt = displayTime(~, event_obj, latitudes, longitudes, times)
@@ -124,7 +145,6 @@ function output_txt = displayTime(~, event_obj, latitudes, longitudes, times)
     % Get the corresponding latitude, longitude, and time
     lat = latitudes(idx);
     lon = longitudes(idx);
-    % timeStr = datestr(times(idx), 'yyyy-mm-dd HH:MM:SS');
     timeStr = num2str(times(idx));
 
     % Output the time, latitude, and longitude as the label
@@ -135,24 +155,13 @@ end
 
 
 
-
-hold on
-for i = 2:n_sats
-    geoplot(squeeze(rlla(i,1,1:lim)),squeeze(rlla(i,2,1:lim)))
-end
-for i = 1:n_sats
-    geoplot(squeeze(rlla(i,1,floor(lim/2))),squeeze(rlla(i,2,floor(lim/2))),'ok')
-end
-hold off
-legend('ISS','Starlink','OneWeb','Location','northeast')
-
 cte = 1000;
 figure(4)
 plot(tsince(1,:),bistaticRange(1,:)/cte)
 grid on
 hold on
-plot(tsince(1,:),R1(1,:)/cte)
-plot(tsince(1,:),R2(1,:)/cte)
+% plot(tsince(1,:),R1(1,:)/cte)
+% plot(tsince(1,:),R2(1,:)/cte)
 for i = 2:n_sats
     plot(tsince(i,:),bistaticRange(i,:)/cte)
 end
