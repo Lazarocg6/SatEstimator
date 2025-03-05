@@ -1,4 +1,4 @@
-function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out] = propagar(sats,duracion,precision,filenameTLEs,filenameEOP)
+function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out,epochDaytime] = propagar(sats,duracion,precision,filenameTLEs,filenameEOP,f,Re)
 %PROPAGAR Funcion que calcula posicion y velocidad tanto en ECEF como en LLA 
 %   Precision y duracion en minutos
     format long g
@@ -144,8 +144,6 @@ function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out] = propagar(sats,dura
             [recef(:,i),vecef(:,i)] = teme2ecef(rteme(:,i),vteme(:,i),T,MJD_UT1+2400000.5,LOD,x_pole,y_pole,2);
             [rtod(:,i), vtod(:,i)] = ecef2tod(recef(:,i),vecef(:,i),T,MJD_UT1+2400000.5,LOD,x_pole,y_pole,2,dpsi,deps);
             % LatLonAlt
-            f = 6378135; % Params WGS72
-            Re = 1/298.26; % Params WGS72
             rtemp = ecef2lla(recef(:,i)'.*10e3,f,Re);
             vtemp = ecef2lla(vecef(:,i)'.*10e3,f,Re);
             if i == 1 
@@ -175,9 +173,15 @@ function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out] = propagar(sats,dura
                 rlla_out(n_sat,:,:) = rlla;
                 vlla_out(n_sat,:,:) = vlla;
                 success = 1;
-            catch
-                rlla_out(n_sat,:,:) = rlla_out(n_sat,:,1:size(rlla_out,3)-1);
-                vlla_out(n_sat,:,:) = vlla_out(n_sat,:,1:size(rlla_out,3)-1);
+            catch ME
+                disp(ME.message)
+                diff = size(rlla_out,3)-size(rlla,2);
+                if diff > 0
+                    rlla_out = rlla_out(:,:,1:(size(rlla_out,3)-diff));
+                elseif diff < 0
+                    rlla_out = cat(3,rlla_out,zeros([n_sat-1,3,-diff]));
+                end
+                disp('repeat')
             end
         end
 
