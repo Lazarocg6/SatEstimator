@@ -1,4 +1,4 @@
-function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out,epochDaytime] = propagar(sats,duracion,precision,filenameTLEs,filenameEOP,f,Re)
+function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out,epochDaytime] = propagar(sats,duracion,precision,filenameEOP,f,Re)
 %PROPAGAR Funcion que calcula posicion y velocidad tanto en ECEF como en LLA 
 %   Precision y duracion en minutos
     format long g
@@ -15,10 +15,8 @@ function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out,epochDaytime] = propa
     
     for n_sat = 1:n_sats
     
-        fid = fopen(filenameTLEs,'rt');
-        for i = 1:(2*n_sat)-1
-            tline = fgetl(fid);
-        end
+        fid = fopen([fullfile('TLEs',int2str(sats(n_sat).NORAD)),'.txt'],'rt');
+        tline = fgetl(fid);
     
         % read first line
         tline = fgetl(fid);

@@ -47,27 +47,29 @@ elRX = elVill;
 duracion = 300;% En minutos, 'duracion' minutos antes y despues del momento actual 
 precision = 60/60;% En minutos
 
-ISS = 25544;
-Starlink = 44737;
-OneWeb = 44057;
+% Satellites
 
-sats = [ISS];
+ISS = struct('Name','ISS','NORAD',25544);
+Starlink = struct('Name','Starlink','NORAD',44737);
+OneWeb = struct('Name','OneWeb','NORAD',44057);
+
+sats = [ISS Starlink];
 
 n_sats = length(sats);
 
 % filenames
 filenameEOP = 'EOP-All.txt';  % Specify the file path
-filenameTLEs = 'TLEs.txt';  % Specify the file path
+% filenameTLEs = 'TLEs.txt';  % Specify the file path
 
 % Actualizar archivo EOP
 updateEOP(24,filenameEOP);
 
 % Actualizar TLEs
-updateTLE(6,sats,filenameTLEs);
+updateTLE(6,sats);
 
 %SGP4
 
-[recef,vecef,rlla,vlla,tsince,epoch] = propagar(sats,duracion,precision,filenameTLEs,filenameEOP,f,Re);
+[recef,vecef,rlla,vlla,tsince,epoch] = propagar(sats,duracion,precision,filenameEOP,f,Re);
 
 %bistatic parameters
 
@@ -78,7 +80,7 @@ updateTLE(6,sats,filenameTLEs);
 
 figure(1)
 
-plot3(squeeze(recef(1,1,:)),squeeze(recef(1,2,:)),squeeze(recef(1,3,:)))
+plot3(squeeze(recef(1,1,:)),squeeze(recef(1,2,:)),squeeze(recef(1,3,:)),'DisplayName','ISS')
 grid on
 hold on 
 for i = 2:n_sats
@@ -86,7 +88,7 @@ for i = 2:n_sats
 end
 hold off
 pbaspect([1 1 1])
-legend('ISS','Starlink','OneWeb','Location','best')
+legend('Location','best')
 
 dist = zeros(n_sats,length(tsince));
 
@@ -97,14 +99,14 @@ for j = 1:n_sats
 end
 
 figure(2)
-plot(tsince,dist(1,:)-rTierra)
+plot(tsince,dist(1,:)-rTierra,'DisplayName','ISS')
 grid on
 hold on
 for i = 2:n_sats
     plot(tsince,dist(i,:)-rTierra)
 end
 hold off
-legend('ISS','Starlink','OneWeb','Location','best')
+legend('Location','best')
 
 lim = length(rlla)-(length(rlla)-length(recef));
 
@@ -157,7 +159,7 @@ end
 
 cte = 1000;
 figure(4)
-plot(tsince(1,:),bistaticRange(1,:)/cte)
+plot(tsince(1,:),bistaticRange(1,:)/cte,'DisplayName','ISS')
 grid on
 hold on
 % plot(tsince(1,:),R1(1,:)/cte)
@@ -166,7 +168,7 @@ for i = 2:n_sats
     plot(tsince(i,:),bistaticRange(i,:)/cte)
 end
 hold off
-legend('ISS','Starlink','OneWeb','Location','best')
+legend('Location','best')
 title('Bistatic range')
 ylabel('Magnitude [Km]')
 xlabel('Time [min]')
