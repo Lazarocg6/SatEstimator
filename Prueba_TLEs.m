@@ -1,16 +1,3 @@
-%--------------------------------------------------------------------------
-%                   SGP4 Orbit Propagator (vectorized)
-%
-% References:
-% Hoots, Felix R., and Ronald L. Roehrich. 1980. Models for Propagation of
-% NORAD Element Sets. Spacetrack Report #3. U.S. Air Force: Aerospace Defense
-% Command.
-% 
-% Vallado D. A; Fundamentals of Astrodynamics and Applications; McGraw-Hill
-% , New York; 4th edition (2013).
-% 
-% Last modified:   2025/03/02   Lázaro Cantos García
-%--------------------------------------------------------------------------
 clc
 clear
 close all
