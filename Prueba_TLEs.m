@@ -337,7 +337,7 @@ for i = 1:n_sats
     geoplot(squeeze(rlla(i,1,floor(lim/2))),squeeze(rlla(i,2,floor(lim/2))),'ok')
 end
 hold off
-legend('ISS','Starlink','OneWeb','Location','northeast')
+legend('ISS','Starlink','OneWeb','Location','northeast') 
 
 
-
+% NUEVO COMENTARIO
