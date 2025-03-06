@@ -1,0 +1,74 @@
+# Windows system files
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Windows-specific logs and caches
+ntuser.dat
+ntuser.dat.LOG*
+ehthumbs.db
+
+# Visual Studio related
+.vscode/
+*.code-workspace
+*.suo
+*.user
+*.userossc
+*.sln.cache
+*.pdb
+*.obj
+*.ilk
+*.aps
+*.pch
+*.ncb
+*.ipch
+*.dbmdl
+*.opendb
+*.VC.db
+*.vs/
+debug/
+release/
+x64/
+x86/
+
+# Python related
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Node.js related
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Backup and temporary files
+*.bak
+*.swp
+*.swo
+*.tmp
+*.log
+*.~*
+*.orig
+*.asv
+
+# Compiled files
+*.exe
+*.dll
+*.out
+*.obj
+*.o
+*.a
+*.lib
+*.so
+*.dylib
+
+# Git and version control
+.git/
+*.gitattributes

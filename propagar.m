@@ -90,6 +90,8 @@ function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out,epochDaytime] = propa
         vecef = zeros(3,num);
         rtod = zeros(3,num);
         vtod = zeros(3,num);
+        rlla = zeros(3,num);
+        vlla = zeros(3,num);
     
         [rteme, vteme] = sgp4(tsince, satdata);
         % read Earth orientation parameters
@@ -141,46 +143,17 @@ function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out,epochDaytime] = propa
             [reci(:,i),veci(:,i)] = teme2eci(rteme(:,i),vteme(:,i),T,dpsi,deps);
             [recef(:,i),vecef(:,i)] = teme2ecef(rteme(:,i),vteme(:,i),T,MJD_UT1+2400000.5,LOD,x_pole,y_pole,2);
             [rtod(:,i), vtod(:,i)] = ecef2tod(recef(:,i),vecef(:,i),T,MJD_UT1+2400000.5,LOD,x_pole,y_pole,2,dpsi,deps);
+
             % LatLonAlt
-            rtemp = ecef2lla(recef(:,i)'.*10e3,f,Re);
-            vtemp = ecef2lla(vecef(:,i)'.*10e3,f,Re);
-            if i == 1 
-                rlla(:,cont) = rtemp;
-                vlla(:,cont) = vtemp;
-            else
-                if (abs(rtemp(2)-rlla(2,cont-1))>90)
-                    rlla(:,cont) = [NaN NaN NaN];
-                    vlla(:,cont) = [NaN NaN NaN];
-                    cont = cont+1;
-                    rlla(:,cont) = rtemp;
-                    vlla(:,cont) = vtemp;
-                else
-                    rlla(:,cont) = rtemp;
-                    vlla(:,cont) = vtemp;
-                end
-                rlla(:,cont) = rtemp;
-                vlla(:,cont) = vtemp;
-            end
-            cont = cont+1;
-        end
-        recef_out(n_sat,:,:) = recef;
-        vecef_out(n_sat,:,:) = vecef;
-        success = 0;
-        while success == 0
-            try
-                rlla_out(n_sat,:,:) = rlla;
-                vlla_out(n_sat,:,:) = vlla;
-                success = 1;
-            catch ME
-                disp(ME.message)
-                diff = size(rlla_out,3)-size(rlla,2);
-                if diff > 0
-                    rlla_out = rlla_out(:,:,1:(size(rlla_out,3)-diff));
-                elseif diff < 0
-                    rlla_out = cat(3,rlla_out,zeros([n_sat-1,3,-diff]));
-                end
-                disp('repeat')
-            end
+            rlla(:,i) = ecef2lla(recef(:,i)'.*10e3,f,Re);
+            vlla(:,i) = ecef2lla(vecef(:,i)'.*10e3,f,Re);
+            
+            %Out vars
+            recef_out(n_sat,:,:) = recef;
+            vecef_out(n_sat,:,:) = vecef;
+            rlla_out(n_sat,:,:)= rlla;
+            vlla_out(n_sat,:,:)= vlla;            
+
         end
 
         tsince_out(n_sat,:) = tsince-tSinceEpoch;

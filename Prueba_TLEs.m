@@ -44,22 +44,20 @@ latRX = latVill;
 lonRX = lonVill;
 elRX = elVill;
 
-duracion = 300;% En minutos, 'duracion' minutos antes y despues del momento actual 
-precision = 60/60;% En minutos
+duracion = 120;% En minutos, 'duracion' minutos antes y despues del momento actual 
+precision = 10/60;% En minutos
 
 % Satellites
-
 ISS = struct('Name','ISS','NORAD',25544);
 Starlink = struct('Name','Starlink','NORAD',44737);
 OneWeb = struct('Name','OneWeb','NORAD',44057);
 
-sats = [ISS Starlink];
+sats = [ISS Starlink OneWeb];
 
 n_sats = length(sats);
 
 % filenames
 filenameEOP = 'EOP-All.txt';  % Specify the file path
-% filenameTLEs = 'TLEs.txt';  % Specify the file path
 
 % Actualizar archivo EOP
 updateEOP(24,filenameEOP);
@@ -68,76 +66,79 @@ updateEOP(24,filenameEOP);
 updateTLE(6,sats);
 
 %SGP4
+[recef,vecef,rlla_out,vlla_out,tsince,epoch] = propagar(sats,duracion,precision,filenameEOP,f,Re);
 
-[recef,vecef,rlla,vlla,tsince,epoch] = propagar(sats,duracion,precision,filenameEOP,f,Re);
+rlla = evitarSaltos(rlla_out); 
+vlla = evitarSaltos(vlla_out); 
 
 %bistatic parameters
-
 [bistaticRange,R1,R2,llaDIST,ecefDIST] = bistaticParams(latTX,lonTX,elTX,latRX, ...
     lonRX,elRX,recef*1000,f,Re);
 
 %Figuras
+leftX = 200;
+rightX = 850;
+topY = 550;
+botY = 50;
 
-figure(1)
 
-plot3(squeeze(recef(1,1,:)),squeeze(recef(1,2,:)),squeeze(recef(1,3,:)),'DisplayName','ISS')
+%Figure1-----------------------------------------------------------------------------------
+fig1 = figure(1);
+
+plot3(squeeze(recef(:,1,:))',squeeze(recef(:,2,:))',squeeze(recef(:,3,:))')
 grid on
-hold on 
-for i = 2:n_sats
-    plot3(squeeze(recef(i,1,:)),squeeze(recef(i,2,:)),squeeze(recef(i,3,:)))
-end
-hold off
 pbaspect([1 1 1])
-legend('Location','best')
+legend({sats.Name}, 'Location', 'best')
+set(fig1, 'Position', [leftX, topY, 560, 420]);
+title('Órbita [Km]')
 
-dist = zeros(n_sats,length(tsince));
+%Figure2---------------------------------------------------------------------------------
+dist = zeros(n_sats, length(tsince));
 
+% Calculate the distance for each satellite and time point
 for j = 1:n_sats
     for i = 1:length(tsince)
         dist(j,i) = norm(recef(j,:,i));
     end
 end
 
-figure(2)
-plot(tsince,dist(1,:)-rTierra,'DisplayName','ISS')
+fig2 = figure(2);
 grid on
 hold on
-for i = 2:n_sats
-    plot(tsince,dist(i,:)-rTierra)
-end
-hold off
-legend('Location','best')
+plot(tsince', dist' - rTierra) % Plot vectorized data
 
+legend({sats.Name}, 'Location', 'best') % Use the array of names for the legend
+hold off
+title('Altura sobre el nivel del mar')
+ylabel('Magnitud [Km]')
+xlabel('Tiempo [min]')
+xlim([-duracion duracion])
+set(fig2, 'Position', [rightX, topY, 560, 420]);
+
+%Figure3---------------------------------------------------------------------------------
 lim = length(rlla)-(length(rlla)-length(recef));
 
-figure(3)
-geoplot(squeeze(rlla(1,1,1:lim)),squeeze(rlla(1,2,1:lim)),'DisplayName','ISS')
+fig3 = figure(3);
+geoplot(squeeze(rlla(1,1,1:lim)),squeeze(rlla(1,2,1:lim)),'DisplayName',sats(1).Name)
 geolimits([35 50],[-14 14])
 hold on
+for i = 2:n_sats
+    geoplot(squeeze(rlla(i,1,1:lim)),squeeze(rlla(i,2,1:lim)),'DisplayName',sats(i).Name)
+end
 geoplot(latTX,lonTX,'xr','DisplayName', 'TX')
 geoplot(latRX,lonRX,'xr','DisplayName', 'RX')
 geobasemap('darkwater'); 
 
-% Annotate the plot with time-------------------------------------------------------------------------------------
-
-% Add custom data cursor mode to show the time when hovering
-dcm = datacursormode(gcf);  % Get the data cursor mode for the current figure
-% set(dcm, 'Enable', 'on');  % Enable data cursor
-
 % Customize the data cursor display
-set(dcm, 'UpdateFcn', @(obj, event) displayTime(obj, event, ...
-    squeeze(rlla(1,1,1:lim)), squeeze(rlla(1,2,1:lim)), tsince(1,:)));
-
-for i = 2:n_sats
-    geoplot(squeeze(rlla(i,1,1:lim)),squeeze(rlla(i,2,1:lim)))
-end
 for i = 1:n_sats
-    geoplot(squeeze(rlla(i,1,floor(lim/2))),squeeze(rlla(i,2,floor(lim/2))),'ok')
+    geoplot(squeeze(rlla(i,1,floor(lim/2))),squeeze(rlla(i,2,floor(lim/2))),'ok', ...
+        'DisplayName',[sats(i).Name ' position'])
+    dcm = datacursormode(gcf);
     set(dcm, 'UpdateFcn', @(obj, event) displayTime(obj, event, ...
-    squeeze(rlla(1,1,1:lim)), squeeze(rlla(1,2,1:lim)), tsince(1,:)));
+    squeeze(rlla(i,1,1:lim)), squeeze(rlla(i,2,1:lim)), tsince(i,:)));
 end
 hold off
-legend('Location','northeast')
+legend('Location','southeast')
 
 % Custom function to display time on hover
 function output_txt = displayTime(~, event_obj, latitudes, longitudes, times)
@@ -154,21 +155,23 @@ function output_txt = displayTime(~, event_obj, latitudes, longitudes, times)
                   ['Latitude: ', num2str(lat)], ...
                   ['Longitude: ', num2str(lon)]};
 end
+title('Posición actual y propagada')
+set(fig3, 'Position', [leftX, botY, 560, 420]);
 
-
-
+%Figure4---------------------------------------------------------------------------------
 cte = 1000;
-figure(4)
-plot(tsince(1,:),bistaticRange(1,:)/cte,'DisplayName','ISS')
+fig4 = figure(4);
+plot(tsince',bistaticRange'/cte)
 grid on
-hold on
+% hold on
 % plot(tsince(1,:),R1(1,:)/cte)
 % plot(tsince(1,:),R2(1,:)/cte)
-for i = 2:n_sats
-    plot(tsince(i,:),bistaticRange(i,:)/cte)
-end
-hold off
+% hold off
 legend('Location','best')
 title('Bistatic range')
 ylabel('Magnitude [Km]')
 xlabel('Time [min]')
+xlim([-duracion duracion])
+legend({sats.Name}, 'Location', 'best')
+
+set(fig4, 'Position', [rightX, botY, 560, 420]);
