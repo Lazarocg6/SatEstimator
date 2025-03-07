@@ -16,328 +16,199 @@ clear
 close all
 format long g
 
+f = 1/298.26; % WGS72 Parameters
+Re = 6378135; % WGS72 Parameters
+rTierra = 6378.0; % Average radius of Earth in km
+
 addpath('SGP4_Vectorized')
 
-global const
-SAT_Const
+% Coordinates
 
-% duracion = 90;% En minutos, 'duracion' minutos antes y despues del momento actual 
+latETSIT = 40.45206046037957;
+lonETSIT = -3.726407299669201;
+elETSIT = 670; % Average altitude
 
-ge = 398600.8; % Earth gravitational constant [km3/s2]
-TWOPI = 2*pi;
-MINUTES_PER_DAY = 1440;
-MINUTES_PER_DAY_SQUARED = (MINUTES_PER_DAY * MINUTES_PER_DAY);
-MINUTES_PER_DAY_CUBED = (MINUTES_PER_DAY * MINUTES_PER_DAY_SQUARED);
+latVill = 40.6223011985758;
+lonVill = -4.010124224894723;
+elVill = 930; % Average altitude
 
-ISS = 25544;
-Starlink = 44737;
-OneWeb = 44057;
+latGRAVES = 47.34813145826119;
+lonGRAVES = 5.51487314868131;
+elGRAVES = 180; % Average altitude
+
+% Coordinates to be used
+latTX = latGRAVES;
+lonTX = lonGRAVES;
+elTX = elGRAVES;
+latRX = latVill;
+lonRX = lonVill;
+elRX = elVill;
+
+duracion = 120; % In minutes, 'duracion' before and after the current time
+precision = 60 / 60; % Precision in minutes
+
+% Satellites
+ISS = struct('Name', 'ISS', 'NORAD', 25544);
+Starlink = struct('Name', 'Starlink', 'NORAD', 44737);
+OneWeb = struct('Name', 'OneWeb', 'NORAD', 44057);
 
 sats = [ISS Starlink OneWeb];
 
 n_sats = length(sats);
 
-% satData = cell(2,9,n_sats);
+%EOP.txt filename
+filenameEOP = 'EOP-All.txt';  
 
-lines1 = cell(1,length(n_sats));
-lines2 = cell(1,length(n_sats));
+updateEOP(24, filenameEOP); % Update EOP every 24 hours
 
-% Actualizar archivo EOP
+updateTLE(6, sats); % Update TLE every 6 hours
 
-filename = 'EOP-All.txt';  % Specify the file path
-filenameTLEs = 'TLEs.txt';  % Specify the file path
 
-if isfile(filename)  % Check if the file exists
-    fid = fopen(filename, 'r');  % Open for reading only
-    if fid == -1
-        error('Error opening the file.');
-    else
-        version = fgetl(fid);
-        fecha = fgetl(fid);
-    end
+% SGP4 propagation
+[recef, vecef, rlla_out, vlla_out, tsince, epoch] = propagar(sats, ...
+    duracion, precision, filenameEOP, f, Re);
 
-    fechaSplitted = split(fecha);
-    horaSplitted = split(fechaSplitted{5},':');
-    
-    months = {'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', ...
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'};
-          
-    % Find the index of the input month in the list
-    monthNum = find(strcmpi(fechaSplitted{3}, months));
+rlla = evitarSaltos(rlla_out); 
+vlla = evitarSaltos(vlla_out); 
 
-    fechaUpdate = datetime(str2double(fechaSplitted{2}),monthNum ...
-        ,str2double(fechaSplitted{4}),str2double(horaSplitted{1}) ...
-        ,str2double(horaSplitted{2}),str2double(horaSplitted{3}));
-    fechaActual = datetime("now");
+%Bistatic parameters
+[bistaticRange, R1, R2, llaDIST, ecefDIST] = bistaticParams(latTX, ...
+    lonTX, elTX, latRX, lonRX, elRX, recef * 1000, f, Re);
 
-    if hours(fechaActual-fechaUpdate) > 24
-        websave(filename,'https://celestrak.org/SpaceData/EOP-All.txt')
-        disp('EOP llamado \n')
-    end
+% Figures
+leftX = 200;
+rightX = 850;
+topY = 550;
+botY = 50;
 
-    fclose(fid);
-else
-    websave(filename,'https://celestrak.org/SpaceData/EOP-All.txt')
-    disp('EOP llamado \n')
-end 
+% Figure 1---------------------------------------------------------------------------------
+fig1 = figure(1);
 
-% Actualizar TLEs
-
-if isfile(filenameTLEs)  % Check if the file exists
-
-    fid = fopen(filenameTLEs,'rt');
-    fechaUpdate = datetime(fgetl(fid));
-    fechaActual = datetime("now");
-    diff = hours(fechaActual-fechaUpdate);
-    fclose(fid);
-
-    if diff > 6
-        fid = fopen(filenameTLEs,'wt');
-        fprintf(fid,'%s\n',datetime("now"));
-        for n_sat = 1:n_sats
-            url = ['https://celestrak.org/NORAD/elements/gp.php?CATNR=',num2str(sats(n_sat)),'&FORMAT=2le'];
-            data = webread(url);  % Read the content from the URL
-            lines = splitlines(data);  % Split the content into lines
-            fprintf(fid,'%s\n',lines{1});
-            fprintf(fid,'%s\n',lines{2});
-        end
-        disp('TLEs llamados')
-        fclose(fid);
-    end
-    
-else
-    fid = fopen(filenameTLEs,'wt');
-    fprintf(fid,'%s\n',datetime("now"));
-    for n_sat = 1:n_sats
-        url = ['https://celestrak.org/NORAD/elements/gp.php?CATNR=',num2str(sats(n_sat)),'&FORMAT=2le'];
-        data = webread(url);  % Read the content from the URL
-        lines = splitlines(data);  % Split the content into lines
-        fprintf(fid,'%s\n',lines{1});
-        fprintf(fid,'%s\n',lines{2});
-    end
-    disp('TLEs llamados')
-    fclose(fid);
-end 
-
-tsince = 0:1:180; % amount of time in which you are going to propagate satellite's state vector forward (+) or backward (-) [minutes] 
-
-num = length(tsince);
-rteme = zeros(n_sats,3,num);
-vteme = zeros(n_sats,3,num);
-reci = zeros(n_sats,3,num);
-veci = zeros(n_sats,3,num);
-recef = zeros(n_sats,3,num);
-vecef = zeros(n_sats,3,num);
-rtod = zeros(n_sats,3,num);
-vtod = zeros(n_sats,3,num);
-% rlla = zeros(n_sats,3,num);
-% vlla = zeros(n_sats,3,num);
-
-%SGP4
-
-for n_sat = 1:n_sats
-
-    fid = fopen(filenameTLEs,'rt');
-    for i = 1:(2*n_sat)-1
-        tline = fgetl(fid);
-    end
-
-    % read first line
-    tline = fgetl(fid);
-    Cnum = tline(3:7);      			        % Catalog Number (NORAD)
-    SC   = tline(8);					        % Security Classification
-    ID   = tline(10:17);			            % Identification Number
-    year = str2num(tline(19:20));               % Year
-    doy  = str2num(tline(21:32));               % Day of year
-    epoch = str2num(tline(19:32));              % Epoch
-    TD1   = str2num(tline(34:43));              % first time derivative
-    TD2   = str2num(tline(45:50));              % 2nd Time Derivative
-    ExTD2 = str2num(tline(51:52));              % Exponent of 2nd Time Derivative
-    BStar = str2num(tline(54:59));              % Bstar/drag Term
-    ExBStar = str2num(tline(60:61));            % Exponent of Bstar/drag Term
-    BStar = BStar*1e-5*10^ExBStar;
-    Etype = tline(63);                          % Ephemeris Type
-    Enum  = str2num(tline(65:end));             % Element Number
-    
-    % read second line
-    tline = fgetl(fid);
-    i = str2num(tline(9:16));                   % Orbit Inclination (degrees)
-    raan = str2num(tline(18:25));               % Right Ascension of Ascending Node (degrees)
-    e = str2num(strcat('0.',tline(27:33)));     % Eccentricity
-    omega = str2num(tline(35:42));              % Argument of Perigee (degrees)
-    M = str2num(tline(44:51));                  % Mean Anomaly (degrees)
-    no = str2num(tline(53:63));                 % Mean Motion
-    a = ( ge/(no*2*pi/86400)^2 )^(1/3);         % semi major axis (km)
-    rNo = str2num(tline(65:end));               % Revolution Number at Epoch
-    
-    fclose(fid);
-    
-    satdata.epoch = epoch;
-    satdata.norad_number = Cnum;
-    satdata.bulletin_number = ID;
-    satdata.classification = SC; % almost always 'U'
-    satdata.revolution_number = rNo;
-    satdata.ephemeris_type = Etype;
-    satdata.xmo = M * (pi/180);
-    satdata.xnodeo = raan * (pi/180);
-    satdata.omegao = omega * (pi/180);
-    satdata.xincl = i * (pi/180);
-    satdata.eo = e;
-    satdata.xno = no * TWOPI / MINUTES_PER_DAY;
-    satdata.xndt2o = TD1 * TWOPI / MINUTES_PER_DAY_SQUARED;
-    satdata.xndd6o = TD2 * 10^ExTD2 * TWOPI / MINUTES_PER_DAY_CUBED;
-    satdata.bstar = BStar;
-
-    % tsince = 0:1:375; % amount of time in which you are going to propagate satellite's state vector forward (+) or backward (-) [minutes] 
-    % 
-    % 
-    % fraction = epoch-floor(epoch);
-    % total_hours = fraction * 24;  % Convert to total hours
-    % epochH = floor(total_hours);   % Get whole hours
-    % epochM = floor((total_hours - epochH) * 60);  % Get whole minutes
-    % epochS = floor((total_hours - epochH) * 60 - epochM) * 60;  % Get seconds
-    % 
-    % dateVal = datetime(year, 1, 1) + days(doy - 1); % Convert DOY to date
-    % monthNum = month(dateVal);  % Extract the month
-    % dayNum = day(dateVal, 'dayofmonth');
-    % 
-    % epochDaytime = datetime(year+2000,monthNum,dayNum,epochH,epochM,epochS);
-    % 
-    % tSinceEpoch = floor(minutes(datetime("now")-epochDaytime));
-
-    % tsince = tSinceEpoch-duracion:1:tSinceEpoch+duracion; % amount of time in which you are going to propagate satellite's state vector forward (+) or backward (-) [minutes] 
-    % 
-    % num = length(tsince);
-    % rteme = zeros(n_sats,3,num);
-    % vteme = zeros(n_sats,3,num);
-    % reci = zeros(n_sats,3,num);
-    % veci = zeros(n_sats,3,num);
-    % recef = zeros(n_sats,3,num);
-    % vecef = zeros(n_sats,3,num);
-    % rtod = zeros(n_sats,3,num);
-    % vtod = zeros(n_sats,3,num);
-    % % rlla = zeros(n_sats,3,num);
-    % % vlla = zeros(n_sats,3,num);
-
-    [rteme(n_sat,:,:), vteme(n_sat,:,:)] = sgp4(tsince, satdata);
-    % read Earth orientation parameters
-    fid = fopen('EOP-All.txt','r');
-    %  ----------------------------------------------------------------------------------------------------
-    % |  Date    MJD      x         y       UT1-UTC      LOD       dPsi    dEpsilon     dX        dY    DAT
-    % |(0h UTC)           "         "          s          s          "        "          "         "     s 
-    %  ----------------------------------------------------------------------------------------------------
-    while ~feof(fid)
-        tline = fgetl(fid);
-        k = strfind(tline,'NUM_OBSERVED_POINTS');
-        if (k == 1)
-            numrecsobs = str2double(tline(21:end));
-            tline = fgetl(fid);
-            for i=1:numrecsobs
-                eopdata(:,i) = fscanf(fid,'%i %d %d %i %f %f %f %f %f %f %f %f %i',[13 1]);
-            end
-            for i=1:4
-                tline = fgetl(fid);
-            end
-            numrecspred = str2double(tline(22:end));
-            tline = fgetl(fid);
-            for i=numrecsobs+1:numrecsobs+numrecspred
-                eopdata(:,i) = fscanf(fid,'%i %d %d %i %f %f %f %f %f %f %f %f %i',[13 1]);
-            end
-            break
-        end
-    end
-    fclose(fid);
-    
-    
-    if (year < 57)
-        year = year + 2000;
-    else
-        year = year + 1900;
-    end
-    [mon,day2,hr,minute,sec] = days2mdh(year,doy);
-    MJD_Epoch = Mjday(year,mon,day2,hr,minute,sec);
-
-    cont = 1;
-    for i = 1:num
-        MJD_UTC = MJD_Epoch+tsince(i)/1440;
-        % Earth Orientation Parameters
-        [x_pole,y_pole,UT1_UTC,LOD,dpsi,deps,dx_pole,dy_pole,TAI_UTC] = IERS(eopdata,MJD_UTC,'l');
-        [UT1_TAI,UTC_GPS,UT1_GPS,TT_UTC,GPS_UTC] = timediff(UT1_UTC,TAI_UTC);
-        MJD_UT1 = MJD_UTC + UT1_UTC/86400;
-        MJD_TT  = MJD_UTC + TT_UTC/86400;
-        T = (MJD_TT-const.MJD_J2000)/36525;
-        [reci(n_sat,:,i),veci(n_sat,:,i)] = teme2eci(rteme(n_sat,:,i)',vteme(n_sat,:,i)',T,dpsi,deps);
-        [recef(n_sat,:,i),vecef(n_sat,:,i)] = teme2ecef(rteme(n_sat,:,i)',vteme(n_sat,:,i)',T,MJD_UT1+2400000.5,LOD,x_pole,y_pole,2);
-        [rtod(n_sat,:,i), vtod(n_sat,:,i)] = ecef2tod(recef(n_sat,:,i)',vecef(n_sat,:,i)',T,MJD_UT1+2400000.5,LOD,x_pole,y_pole,2,dpsi,deps);
-        % LatLonAlt
-        rtemp = ecef2lla(recef(n_sat,:,i).*10e3,'WGS84');
-        vtemp = ecef2lla(vecef(n_sat,:,i).*10e3,'WGS84');
-        if i == 1 
-            rlla(n_sat,:,cont) = rtemp;
-            vlla(n_sat,:,cont) = vtemp;
-        else
-            if (abs(rtemp(2)-rlla(n_sat,2,cont-1))>90)
-                rlla(n_sat,:,cont) = [NaN NaN NaN];
-                vlla(n_sat,:,cont) = [NaN NaN NaN];
-                cont = cont+1;
-                rlla(n_sat,:,cont) = rtemp;
-                vlla(n_sat,:,cont) = vtemp;
-            else
-                rlla(n_sat,:,cont) = rtemp;
-                vlla(n_sat,:,cont) = vtemp;
-            end
-            rlla(n_sat,:,cont) = rtemp;
-            vlla(n_sat,:,cont) = vtemp;
-        end
-        cont = cont+1;
-    end
-end
-
-figure(1)
-
-plot3(squeeze(recef(1,1,:)),squeeze(recef(1,2,:)),squeeze(recef(1,3,:)))
+plot3(squeeze(recef(:,1,:))',squeeze(recef(:,2,:))',squeeze(recef(:,3,:))')
 grid on
-hold on 
-for i = 2:n_sats
-    plot3(squeeze(recef(i,1,:)),squeeze(recef(i,2,:)),squeeze(recef(i,3,:)))
-end
-hold off
 pbaspect([1 1 1])
-legend('ISS','Starlink','OneWeb','Location','best')
+legend({sats.Name}, 'Location', 'best')
+set(fig1, 'Position', [leftX, topY, 560, 420]);
+title('Orbit [Km]')
 
-dist = zeros(n_sats,length(tsince));
+% Figure 2---------------------------------------------------------------------------------
+dist = zeros(n_sats, length(tsince));
 
+% Calculate the distance for each satellite and time point
 for j = 1:n_sats
     for i = 1:length(tsince)
         dist(j,i) = norm(recef(j,:,i));
     end
 end
 
-rTierra = 6378.0; %Radio medio de la tierra
-
-figure(2)
-plot(tsince,dist(1,:)-rTierra)
+fig2 = figure(2);
 grid on
 hold on
-for i = 2:n_sats
-    plot(tsince,dist(i,:)-rTierra)
-end
+plot(tsince', dist' - rTierra) % Plot vectorized data
+
+legend({sats.Name}, 'Location', 'best')
 hold off
-legend('ISS','Starlink','OneWeb','Location','best')
+title('Altitude above sea level')
+ylabel('Magnitude [Km]')
+xlabel('Time [min]')
+xlim([-duracion duracion])
+set(fig2, 'Position', [rightX, topY, 560, 420]);
 
-lim = length(rlla)-(length(rlla)-length(recef));
+% Figure 3---------------------------------------------------------------------------------
+lim = length(rlla) - (length(rlla) - length(recef));
 
-figure(3)
-geoplot(squeeze(rlla(1,1,1:lim)),squeeze(rlla(1,2,1:lim)))
-hold on
-for i = 2:n_sats
-    geoplot(squeeze(rlla(i,1,1:lim)),squeeze(rlla(i,2,1:lim)))
-end
+fig3 = figure(3);
+ax = geoaxes; % Create Geographic Axes
+hold(ax, 'on') % Enable hold on for the geographic axes
+geolimits([35 50], [-14 14])
+
+% Plot satellite trajectories
 for i = 1:n_sats
-    geoplot(squeeze(rlla(i,1,floor(lim/2))),squeeze(rlla(i,2,floor(lim/2))),'ok')
+    geoplot(ax, squeeze(rlla(i, 1, 1:lim)), squeeze(rlla(i, 2, 1:lim)), ...
+        'DisplayName', sats(i).Name, 'Tag', 'trajectory');
 end
+
+% Plot TX and RX positions
+geoplot(ax, latTX, lonTX, 'xr', 'DisplayName', 'TX', 'Tag', 'TX');
+geoplot(ax, latRX, lonRX, 'xr', 'DisplayName', 'RX', 'Tag', 'RX');
+
+% Plot current satellite positions
+for i = 1:n_sats
+    index = find(tsince(i, :) == 0);
+    geoplot(ax, squeeze(rlla(i, 1, index)), squeeze(rlla(i, 2, index)), ...
+        'ok','DisplayName', [sats(i).Name ' position'], 'Tag', ...
+        'current', 'HandleVisibility', 'off');
+end
+
+geobasemap(ax, 'darkwater');
 hold off
-legend('ISS','Starlink','OneWeb','Location','northeast')
+legend('Location', 'southeast')
 
+% Set up the data cursor mode with a custom function
+dcm = datacursormode(fig3);
+set(dcm, 'UpdateFcn', @(obj, event) displayTime(event, rlla, tsince, ...
+    sats, latTX, lonTX, elTX, latRX, lonRX, elRX));
 
+% Custom function to display time on hover (excluding static markers)
+function output_txt = displayTime(event_obj, rlla, tsince, sats, latTX, ...
+    lonTX, elTX, latRX, lonRX, elRX)
 
+    % Get the clicked point's tag
+    targetObj = get(event_obj.Target, 'Tag');
+    targetID = find(strcmp({sats.Name}, erase(get(event_obj.Target ...
+        , 'DisplayName'), ' position')));
+
+    % Case 1: Trajectory points (show corresponding time)
+    if strcmp(targetObj, 'trajectory')
+        index = event_obj.DataIndex;
+        % Return time, latitude, and longitude
+        output_txt = {['Time: ', [num2str(tsince(targetID, index)) ' min']], ...
+                      ['Latitude: ', [num2str(rlla(targetID, 1, index))] 'º'], ...
+                      ['Longitude: ', [num2str(rlla(targetID, 2, index))] 'º'], ...
+                      ['Elevation: ', [num2str(rlla(targetID, 3, index) / 10^3, '%.2f') ' Km']]};
+
+    % Case 2: Current satellite position (show time = 0)
+    elseif strcmp(targetObj, 'current')
+        index = find(tsince(targetID, :) == 0);
+        output_txt = {['Time: ', [num2str(tsince(targetID, index)) ' min']], ...
+                      ['Latitude: ', [num2str(rlla(targetID, 1, index))] 'º'], ...
+                      ['Longitude: ', [num2str(rlla(targetID, 2, index))] 'º'], ...
+                      ['Elevation: ', [num2str(rlla(targetID, 3, index) / 10^3, '%.2f') ' Km']]};
+
+    % Case 3: Static points (TX, RX) - Show lat/lon but hide time
+    elseif strcmp(targetObj, 'TX')
+        output_txt = {['Latitude: ', [num2str(latTX)] 'º'], ...
+                      ['Longitude: ', [num2str(lonTX) 'º']], ...
+                      ['Elevation: ', [num2str(elTX)] ' m']};
+
+    elseif strcmp(targetObj, 'RX')
+        output_txt = {['Latitude: ', [num2str(latRX)] 'º'], ...
+                      ['Longitude: ', [num2str(lonRX)] 'º'], ...
+                      ['Elevation: ', [num2str(elRX)] ' m']};
+
+    % Default: Ignore other objects
+    else
+        output_txt = {};
+    end
+end
+
+title('Current and propagated position')
+set(fig3, 'Position', [leftX, botY, 560, 420]);
+
+% Figure 4---------------------------------------------------------------------------------
+cte = 1000;
+fig4 = figure(4);
+plot(tsince', bistaticRange' / cte)
+grid on
+% hold on
+% plot(tsince(1,:), R1(1,:) / cte)
+% plot(tsince(1,:), R2(1,:) / cte)
+% hold off
+legend('Location', 'best')
+title('Bistatic range')
+ylabel('Magnitude [Km]')
+xlabel('Time [min]')
+xlim([-duracion duracion])
+legend({sats.Name}, 'Location', 'best')
+
+set(fig4, 'Position', [rightX, botY, 560, 420]);
