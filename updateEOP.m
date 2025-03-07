@@ -27,13 +27,13 @@ function updateEOP(lastUpdate,filenameEOP)
     
         if hours(fechaActual-fechaUpdate) > lastUpdate
             websave(filenameEOP,'https://celestrak.org/SpaceData/EOP-All.txt');
-            disp('EOP llamado \n')
+            disp('EOP llamado\n')
         end
     
         fclose(fid);
     else
         websave(filenameEOP,'https://celestrak.org/SpaceData/EOP-All.txt');
-        disp('EOP llamado \n')
+        disp('EOP llamado\n')
     end 
 
 end

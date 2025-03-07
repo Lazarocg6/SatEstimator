@@ -145,8 +145,8 @@ function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out,epochDaytime] = propa
             [rtod(:,i), vtod(:,i)] = ecef2tod(recef(:,i),vecef(:,i),T,MJD_UT1+2400000.5,LOD,x_pole,y_pole,2,dpsi,deps);
 
             % LatLonAlt
-            rlla(:,i) = ecef2lla(recef(:,i)'.*10e3,f,Re);
-            vlla(:,i) = ecef2lla(vecef(:,i)'.*10e3,f,Re);
+            rlla(:,i) = ecef2lla(recef(:,i)'.*10^3,f,Re);
+            vlla(:,i) = ecef2lla(vecef(:,i)'.*10^3,f,Re);
             
             %Out vars
             recef_out(n_sat,:,:) = recef;
