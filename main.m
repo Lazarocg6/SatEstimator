@@ -1,15 +1,5 @@
 %--------------------------------------------------------------------------
-%                   SGP4 Orbit Propagator (vectorized)
-%
-% References:
-% Hoots, Felix R., and Ronald L. Roehrich. 1980. Models for Propagation of
-% NORAD Element Sets. Spacetrack Report #3. U.S. Air Force: Aerospace Defense
-% Command.
-% 
-% Vallado D. A; Fundamentals of Astrodynamics and Applications; McGraw-Hill
-% , New York; 4th edition (2013).
-% 
-% Last modified:   2025/03/02   Lázaro Cantos García
+% 03/2025   Lázaro Cantos García
 %--------------------------------------------------------------------------
 clc
 clear
@@ -46,15 +36,15 @@ latRX = latVill;
 lonRX = lonVill;
 elRX = elVill;
 
-duracion = 180; % In minutes, 'duracion' before and after the current time
-precision = 10 / 60; % Precision in minutes
+duracion = 30; % In minutes, 'duracion' before and after the current time
+precision = 5 / 60; % Precision in minutes
 
 % Satellites
 ISS = struct('Name', 'ISS', 'NORAD', 25544);
 Starlink = struct('Name', 'Starlink', 'NORAD', 44737);
-OneWeb = struct('Name', 'OneWeb', 'NORAD', 44057);
+OneWeb = struct('Name', 'OneWeb', 'NORAD', 48968);
 
-sats = [ISS Starlink OneWeb];
+sats = [ISS];
 
 n_sats = length(sats);
 
@@ -247,10 +237,6 @@ cte = 1000;
 fig6 = figure(6);
 plot(tsince', bistaticVelocity' / cte)
 grid on
-% hold on
-% plot(tsince(1,:), R1(1,:) / cte)
-% plot(tsince(1,:), R2(1,:) / cte)
-% hold off
 legend('Location', 'best')
 title('Bistatic Velocity')
 ylabel('Magnitude [Km/s]')
@@ -263,15 +249,24 @@ set(fig6, 'Position', [centerX, botY, 560, 420]);
 % Figure 7---------------------------------------------------------------------------------
 cte = 1000;
 fig7 = figure(7);
-plot(tsince', f_doppler' / cte)
+numSeries = size(f_doppler, 1);
+colors = lines(numSeries);
+yyaxis left
+h = plot(tsince', f_doppler' / cte,'-');
+ylabel('Doppler frequency [Hz]')
+yyaxis right
+ylim([min(min(f_doppler/cte)) max(max(f_doppler/cte))])
+ytickformat('%.4f') 
+ax = gca;
+ax.YAxis(1).Color = 'black';
+ax.YAxis(2).Color = 'black';
+% plot(tsince', (freq+(f_doppler' / cte))/10^6)
+ylim((ylim + freq)/10^6);
+ylabel('RX frequency [MHz]')
+set(h, {'Color'}, num2cell(colors, 2));
 grid on
-% hold on
-% plot(tsince(1,:), R1(1,:) / cte)
-% plot(tsince(1,:), R2(1,:) / cte)
-% hold off
 legend('Location', 'best')
-title('Doppler Frequency')
-ylabel('Magnitude [Hz]')
+title('Doppler')
 xlabel('Time [min]')
 xlim([-duracion duracion])
 legend({sats.Name}, 'Location', 'best')
