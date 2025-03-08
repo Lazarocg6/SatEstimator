@@ -49,14 +49,21 @@ function graphs(sats,instante,duracion,precision,RX)
     %Doppler
     f_doppler = (bistaticVelocity*1000)./-lambda;
 
+    %AzEl
+    [azRX,elevRX,slantRangeRX] = ecef2aer(recef(:,1,:)*10^3,recef(:,2,:)*10^3, ...
+        recef(:,3,:)*10^3,RX(1),RX(2),RX(3),referenceEllipsoid('wgs72'));
+    [azTX,elevTX,slantRangeTX] = ecef2aer(recef(:,1,:)*10^3,recef(:,2,:)*10^3, ...
+        recef(:,3,:)*10^3,latTX,lonTX,elTX,referenceEllipsoid('wgs72'));
+
     % Add UTC time function--------------------------------------------------------------------
 
-    function out_txt = addUTC(event_obj, xData, yData,UTCtime)
-
-        index = event_obj.DataIndex;
-        out_txt = {['X: ', [num2str(xData(index))] ' min'], ...
+    function out_txt = addUTC(event_obj,UTCtime)
+        targetID = find(strcmp({sats.Name}, get(event_obj.Target ...
+            , 'DisplayName')));
+        dat = event_obj.Position;
+        out_txt = {['X: ', [num2str(dat(1))] ' min'], ...
                    ['Time: ', char(UTCtime(1, index))], ...
-                   ['Y: ', [num2str(yData(index))] '']};
+                   ['Y: ', [num2str(dat(2))] '']};
 
     end
 
@@ -117,7 +124,7 @@ function graphs(sats,instante,duracion,precision,RX)
     set(fig2, 'Position', [rightX, topY, 560, 420]);
     % Set up the data cursor mode with a custom function
     dcm = datacursormode(fig2);
-    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event, tsince',dist' - rTierra,t));
+    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));
     
     % Figure 3---------------------------------------------------------------------------------
     lim = length(rlla) - (length(rlla) - length(recef));
@@ -160,8 +167,8 @@ function graphs(sats,instante,duracion,precision,RX)
     
         % Get the clicked point's tag
         targetObj = get(event_obj.Target, 'Tag');
-        targetID = find(strcmp({sats.Name}, erase(get(event_obj.Target ...
-            , 'DisplayName'), ' position')));
+        targetID = find(strcmp({sats.Name}, get(event_obj.Target ...
+            , 'DisplayName')));
     
         % Case 1: Trajectory points (show corresponding time)
         if strcmp(targetObj, 'trajectory')
@@ -218,8 +225,7 @@ function graphs(sats,instante,duracion,precision,RX)
     legend({sats.Name}, 'Location', 'best')
     % Set up the data cursor mode with a custom function
     dcm = datacursormode(fig4);
-    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event, tsince', ...
-        bistaticRange'/ cte,t));
+    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));
     set(fig4, 'Position', [rightX, botY, 560, 420]);
     
     % Figure 5---------------------------------------------------------------------------------
@@ -245,7 +251,7 @@ function graphs(sats,instante,duracion,precision,RX)
     xlim([-duracion duracion])
     % Set up the data cursor mode with a custom function
     dcm = datacursormode(fig5);
-    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event, tsince',vel',t));    
+    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));    
     set(fig5, 'Position', [centerX, topY, 560, 420]);
     
     % Figure 6---------------------------------------------------------------------------------
@@ -261,8 +267,7 @@ function graphs(sats,instante,duracion,precision,RX)
     legend({sats.Name}, 'Location', 'best')
     % Set up the data cursor mode with a custom function
     dcm = datacursormode(fig6);
-    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event, tsince', ...
-        bistaticVelocity'/cte,t));    
+    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));    
     set(fig6, 'Position', [centerX, botY, 560, 420]);
     
     % Figure 7---------------------------------------------------------------------------------
@@ -296,11 +301,67 @@ function graphs(sats,instante,duracion,precision,RX)
     grid on;
     xlabel('Frequencies [MHz]')
     ylabel('Time [min]')
-    ylim([-10 10])
+    ylim([-5 5])
     ytickformat('%.4f') 
     % Set up the data cursor mode with a custom function
     dcm = datacursormode(fig7);
     set(dcm, 'UpdateFcn', @(obj, event) addUTCsubplot(event, tsince', ...
         f_doppler' / cte,(freq+(f_doppler'/cte))/10^6,tsince',t));    
-    set(fig7, 'Position', [centerX-280, 3*topY/5, 2*560, 420]);
+    set(fig7, 'Position', [centerX-280, topY, 2*560, 420]);
+
+    % Figure 8---------------------------------------------------------------------------------
+    fig8 = figure(8);
+    
+    yyaxis left
+    plot(tsince',squeeze(azRX(:,1,:))')
+    ylabel('Azimuth [º]')
+    yyaxis right
+    plot(tsince',squeeze(elevRX(:,1,:))')
+    ylabel('Elevation [º]')
+
+    title('Position relative to RX')
+    xlabel('Time [min]')
+    T = {sats.Name};
+    legend(T(repmat(1:n_sats,1,2)),'Location', 'best')
+    grid on
+    set(fig8, 'Position', [leftX, 3*topY/5, 560, 420]);
+    dcm = datacursormode(fig8);
+    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));
+
+    % Figure 9---------------------------------------------------------------------------------
+    fig9 = figure(9);
+    
+    yyaxis left
+    plot(tsince',squeeze(azTX(:,1,:))')
+    ylabel('Azimuth [º]')
+    yyaxis right
+    plot(tsince',squeeze(elevTX(:,1,:))')
+    ylabel('Elevation [º]')
+
+    title('Position relative to TX')
+    xlabel('Time [min]')
+    T = {sats.Name};
+    legend(T(repmat(1:n_sats,1,2)),'Location', 'best')
+    grid on
+    set(fig9, 'Position', [rightX, 3*topY/5, 560, 420]);
+    dcm = datacursormode(fig9);
+    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));
+
+    % Figure 10---------------------------------------------------------------------------------
+    fig10 = figure(10);
+    
+    plot(tsince',squeeze(slantRangeTX(:,1,:))'/cte)
+    ylabel('Slant Range [Km]')
+    hold on
+    plot(tsince',squeeze(slantRangeRX(:,1,:))'/cte)
+    hold off
+    title('Slant Ranges')
+    xlabel('Time [min]')
+    T = {sats.Name};
+    legend(T(repmat(1:n_sats,1,2)),'Location', 'best')
+    grid on
+    set(fig10, 'Position', [centerX, 3*topY/5, 560, 420]);
+    dcm = datacursormode(fig10);
+    set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));
+
 end
