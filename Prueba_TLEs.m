@@ -16,9 +16,11 @@ clear
 close all
 format long g
 
+freq = 143.050e6;% frequency in hertz
 f = 1/298.26; % WGS72 Parameters
 Re = 6378135; % WGS72 Parameters
 rTierra = 6378.0; % Average radius of Earth in km
+lambda = 3e8/freq;
 
 addpath('SGP4_Vectorized')
 
@@ -44,8 +46,8 @@ latRX = latVill;
 lonRX = lonVill;
 elRX = elVill;
 
-duracion = 120; % In minutes, 'duracion' before and after the current time
-precision = 60 / 60; % Precision in minutes
+duracion = 180; % In minutes, 'duracion' before and after the current time
+precision = 10 / 60; % Precision in minutes
 
 % Satellites
 ISS = struct('Name', 'ISS', 'NORAD', 25544);
@@ -72,14 +74,18 @@ rlla = evitarSaltos(rlla_out);
 vlla = evitarSaltos(vlla_out); 
 
 %Bistatic parameters
-[bistaticRange, R1, R2, llaDIST, ecefDIST] = bistaticParams(latTX, ...
-    lonTX, elTX, latRX, lonRX, elRX, recef * 1000, f, Re);
+[bistaticRange, bistaticVelocity, R1, R2, llaDIST, ecefDIST] = bistaticParams(latTX, ...
+    lonTX, elTX, latRX, lonRX, elRX, recef * 1000, vecef * 1000, f, Re);
+
+%Doppler
+f_doppler = (bistaticVelocity*1000)./-lambda;
 
 % Figures
-leftX = 200;
-rightX = 850;
+leftX = 0;
+rightX = 1100;
+centerX = 550;
 topY = 550;
-botY = 50;
+botY = 50; 
 
 % Figure 1---------------------------------------------------------------------------------
 fig1 = figure(1);
@@ -212,3 +218,62 @@ xlim([-duracion duracion])
 legend({sats.Name}, 'Location', 'best')
 
 set(fig4, 'Position', [rightX, botY, 560, 420]);
+
+% Figure 5---------------------------------------------------------------------------------
+vel = zeros(n_sats, length(tsince));
+
+% Calculate the distance for each satellite and time point
+for j = 1:n_sats
+    for i = 1:length(tsince)
+        vel(j,i) = norm(vecef(j,:,i));
+    end
+end
+
+fig5 = figure(5);
+grid on
+hold on
+plot(tsince', vel') % Plot vectorized data
+
+legend({sats.Name}, 'Location', 'best')
+hold off
+title('Satellite speed')
+ylabel('Magnitude [Km/s]')
+xlabel('Time [min]')
+xlim([-duracion duracion])
+set(fig5, 'Position', [centerX, topY, 560, 420]);
+
+% Figure 6---------------------------------------------------------------------------------
+cte = 1000;
+fig6 = figure(6);
+plot(tsince', bistaticVelocity' / cte)
+grid on
+% hold on
+% plot(tsince(1,:), R1(1,:) / cte)
+% plot(tsince(1,:), R2(1,:) / cte)
+% hold off
+legend('Location', 'best')
+title('Bistatic Velocity')
+ylabel('Magnitude [Km/s]')
+xlabel('Time [min]')
+xlim([-duracion duracion])
+legend({sats.Name}, 'Location', 'best')
+
+set(fig6, 'Position', [centerX, botY, 560, 420]);
+
+% Figure 7---------------------------------------------------------------------------------
+cte = 1000;
+fig7 = figure(7);
+plot(tsince', f_doppler' / cte)
+grid on
+% hold on
+% plot(tsince(1,:), R1(1,:) / cte)
+% plot(tsince(1,:), R2(1,:) / cte)
+% hold off
+legend('Location', 'best')
+title('Doppler Frequency')
+ylabel('Magnitude [Hz]')
+xlabel('Time [min]')
+xlim([-duracion duracion])
+legend({sats.Name}, 'Location', 'best')
+
+set(fig7, 'Position', [centerX, 3*topY/5, 560, 420]);
