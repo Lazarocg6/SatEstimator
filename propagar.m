@@ -1,4 +1,4 @@
-function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out,epochDaytime] = propagar(sats,duracion,precision,filenameEOP,f,Re)
+function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out] = propagar(sats,instante,duracion,precision,filenameEOP,f,Re)
 %PROPAGAR Funcion que calcula posicion y velocidad tanto en ECEF como en LLA 
 %   Precision y duracion en minutos
     format long g
@@ -77,7 +77,7 @@ function [recef_out,vecef_out,rlla_out,vlla_out,tsince_out,epochDaytime] = propa
     
         epochDaytime = datetime(year+2000,monthNum,dayNum,epochH,epochM,epochS,epochMS,'TimeZone', 'UTC');
     
-        tSinceEpoch = floor(minutes(datetime('now', 'TimeZone', 'UTC')-epochDaytime));
+        tSinceEpoch = floor(minutes(instante-epochDaytime));
     
         tsince = tSinceEpoch-duracion:precision:tSinceEpoch+duracion; % amount of time in which you are going to propagate satellite's state vector forward (+) or backward (-) [minutes]
     
