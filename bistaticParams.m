@@ -13,20 +13,18 @@ function [bistaticRange,bistaticVelocity,R1,R2,baselineLength,baselineECEF] = bi
 
     baselineECEF = sqrt((ecefTX(1)-ecefRX(1))^2+(ecefTX(2)-ecefRX(2))^2+(ecefTX(3)-ecefRX(3))^2);
 
-    bistaticVelocity = zeros(size(recefSATS,1),size(recefSATS,3));
-    bistaticRange = zeros(size(recefSATS,1),size(recefSATS,3));
-    R1 = zeros(size(recefSATS,1),size(recefSATS,3));
-    R2 = zeros(size(recefSATS,1),size(recefSATS,3));
+    bistaticVelocity = zeros(1,length(recefSATS));
+    bistaticRange = zeros(1,length(recefSATS));
+    R1 = zeros(1,length(recefSATS));
+    R2 = zeros(1,length(recefSATS));
 
-    for j = 1:size(recefSATS,1)
-        for i=1:size(recefSATS,3)
-            R1(j,i) = sqrt((ecefTX(1)-recefSATS(j,1,i))^2+(ecefTX(2)-recefSATS(j,2,i))^2+(ecefTX(3)-recefSATS(j,3,i))^2);
-            R2(j,i) = sqrt((ecefRX(1)-recefSATS(j,1,i))^2+(ecefRX(2)-recefSATS(j,2,i))^2+(ecefRX(3)-recefSATS(j,3,i))^2);
-            bistaticRange(j,i)= R1(j,i) + R2(j,i) - baselineECEF;
-            bistaticVelocity(j,i) = -((((ecefTX(1)-recefSATS(j,1,i))*vecefSATS(j,1,i))+((ecefTX(2)-recefSATS(j,2,i))* ...
-                vecefSATS(j,2,i))+((ecefTX(3)-recefSATS(j,3,i))*vecefSATS(j,3,i)))./R1(j,i))-((((ecefRX(1)-recefSATS(j,1,i))* ...
-                vecefSATS(j,1,i))+((ecefRX(2)-recefSATS(j,2,i))*vecefSATS(j,2,i))+((ecefRX(3)-recefSATS(j,3,i))*vecefSATS(j,3,i)))./R2(j,i));
-        end
+    for i=1:length(recefSATS)
+        R1(i) = sqrt((ecefTX(1)-recefSATS(1,i))^2+(ecefTX(2)-recefSATS(2,i))^2+(ecefTX(3)-recefSATS(3,i))^2);
+        R2(i) = sqrt((ecefRX(1)-recefSATS(1,i))^2+(ecefRX(2)-recefSATS(2,i))^2+(ecefRX(3)-recefSATS(3,i))^2);
+        bistaticRange(i)= R1(i) + R2(i) - baselineECEF;
+        bistaticVelocity(i) = -((((ecefTX(1)-recefSATS(1,i))*vecefSATS(1,i))+((ecefTX(2)-recefSATS(2,i))* ...
+            vecefSATS(2,i))+((ecefTX(3)-recefSATS(3,i))*vecefSATS(3,i)))./R1(i))-((((ecefRX(1)-recefSATS(1,i))* ...
+            vecefSATS(1,i))+((ecefRX(2)-recefSATS(2,i))*vecefSATS(2,i))+((ecefRX(3)-recefSATS(3,i))*vecefSATS(3,i)))./R2(i));
     end
 end
 
