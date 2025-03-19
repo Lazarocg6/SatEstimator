@@ -9,16 +9,27 @@ function graphs(sats,instante,duracion,precision,RX,filter)
     elevMinRX = 10; % degrees
     elevMaxRX = 50;
     azMinRX = 0;
-    azMaxRX = 135;
+    azMaxRX = 360;
 
     freq = 143.050e6;% frequency in hertz
     f = 1/298.26; % WGS72 Parameters
     Re = 6378135; % WGS72 Parameters
-    rTierra = 6378.0; % Average radius of Earth in km
     lambda = 3e8/freq;
     
     addpath('SGP4_Vectorized')
-    
+
+    % RADAR eq params
+
+    eirp_tx = 3e9; % EIRP power TX [Watts]
+    RCSb = 5; % bistatic RCS [meters^2]
+
+    Grx = 2.15; % Gain RX [dB]
+    Lsys = 3; % System loses RX [dB]
+    Fs = 3; % Noise figure RX [dB]
+    Brx = 0.25e6;% BW RX [Hz]
+
+    % GRAVES coords
+
     latGRAVES = 47.34813145826119;
     lonGRAVES = 5.51487314868131;
     elGRAVES = 180; % Average altitude
@@ -70,7 +81,7 @@ function graphs(sats,instante,duracion,precision,RX,filter)
     end
 
     % Custom function to display time on hover (excluding static markers)
-    function output_txt = displayTime(event_obj, rlla, tsince,t, sats, ...
+    function output_txt = displayTime(event_obj,t, ...
             latTX, lonTX, elTX, latRX, lonRX, elRX)
     
         % Get the clicked point's tag
@@ -116,7 +127,6 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         end
     end
 
-
     fig3 = figure(3); % If not defined here, the plot resets for each iter
     ax = geoaxes;
     hold(ax, 'on') 
@@ -160,6 +170,14 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         else
             mask = ones(1,length(elevRX));
         end
+
+        % RADAR equation
+
+        l_sys = 10^(Lsys/10);
+        g_rx = 10^(Grx/10);
+        fs = 10^(Fs/10);
+
+        snr = snr_in(eirp_tx,g_rx,lambda,RCSb,R1,R2,l_sys,fs,Brx);
         
         % Figures----------------------------------------------------------------------------------
         leftX = 0;
@@ -224,8 +242,8 @@ function graphs(sats,instante,duracion,precision,RX,filter)
 
         % Set up the data cursor mode with a custom function
         dcm = datacursormode(fig3);
-        set(dcm, 'UpdateFcn', @(obj, event) displayTime(event, rlla, tsince, ...
-            t, sats, latTX, lonTX, elTX, latRX, lonRX, elRX));
+        set(dcm, 'UpdateFcn', @(obj, event) displayTime(event, t, ...
+            latTX, lonTX, elTX, latRX, lonRX, elRX));
 
         title(ax,'Current and propagated position')
         set(fig3, 'Position', [leftX, botY, 560, 420]);
@@ -335,6 +353,8 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         xlabel('Frequencies [MHz]')
         ylabel('Time [min]')
         ylim([-5 5])
+        delta = 0.001;
+        xlabel([(freq/1e6)-delta (freq/1e6)+delta])
         ytickformat('%.4f') 
         % Set up the data cursor mode with a custom function
         dcm = datacursormode(fig7);
@@ -409,8 +429,24 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         % legend(T(repmat(1:length(T),1,2)),'Location', 'best')
         legend('Location','best')
         grid on
-        set(fig10, 'Position', [centerX, 3*topY/5, 560, 420]);
+        set(fig10, 'Position', [centerX, topY, 560, 420]);
         dcm = datacursormode(fig10);
         set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));
+        % Figure 11---------------------------------------------------------------------------------
+        fig11 = figure(11);
+        snr(mask) = NaN;
+        hold on
+        plot(tsince,snr, 'DisplayName',sat.Name)
+        hold off
+        ylabel('SNR [dB]')
+        title('Input signal to noise ratio')
+        xlabel('Time [min]')
+        legend('Location','best')
+        grid on
+        set(fig11, 'Position', [centerX, botY, 560, 420]);
+        dcm = datacursormode(fig11);
+        set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));
+
+
     end
 end
