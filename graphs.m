@@ -20,13 +20,14 @@ function graphs(sats,instante,duracion,precision,RX,filter)
 
     % RADAR eq params
 
-    eirp_tx = 3e9; % EIRP power TX [Watts]
+    eirp_tx = 1e6; % EIRP power TX [Watts]
     RCSb = 5; % bistatic RCS [meters^2]
 
     Grx = 2.15; % Gain RX [dB]
     Lsys = 3; % System loses RX [dB]
     Fs = 3; % Noise figure RX [dB]
     Brx = 0.25e6;% BW RX [Hz]
+    Tint = 1; % Integration time [s]
 
     % GRAVES coords
 
@@ -177,7 +178,7 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         g_rx = 10^(Grx/10);
         fs = 10^(Fs/10);
 
-        snr = snr_in(eirp_tx,g_rx,lambda,RCSb,R1,R2,l_sys,fs,Brx);
+        snr = snr_in(eirp_tx,g_rx,lambda,RCSb,R1,R2,l_sys,fs,Tint);
         
         % Figures----------------------------------------------------------------------------------
         leftX = 0;

@@ -3,9 +3,9 @@ clear
 close all
 %Instante duracion precision
 inst = datetime('now', 'TimeZone', 'UTC'); %Time origin
-inst = inst + minutes(22);
+inst = inst + minutes(134);
 % inst = datetime('13-Mar 11:11:17','InputFormat','dd-MMM HH:mm:ss',TimeZone='Local');
-duracion = 60; % In minutes, 'duracion' before and after the current time
+duracion = 240; % In minutes, 'duracion' before and after the current time
 precision = 60 / 60; % Precision in minutes
 
 % Satellites
@@ -15,7 +15,7 @@ OneWeb = struct('Name', 'OneWeb', 'NORAD', 44057);
 
 sats = [ISS Starlink];
 
-AzElFilter = false;
+AzElFilter = true;
 
 % Coordinates
 
