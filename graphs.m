@@ -141,7 +141,7 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         sat = sats(num);
         % SGP4 propagation
         [recef, vecef, rlla_out, vlla_out, tsince] = propagar(sat, ...
-            instante, duracion, precision, filenameEOP, f, Re);
+            instante, duracion, precision, filenameEOP, f, Re, NaN);
         
         rlla = evitarSaltos(rlla_out); 
         
@@ -156,6 +156,12 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         
         %Doppler
         f_doppler = (bistaticVelocity*1000)./-lambda;
+
+        %Gradient descent
+        noisyDop = noiseGen(f_doppler);
+        optimizedDop = gradDescent(sat, instante, duracion, precision, ...
+            filenameEOP, f, Re, latTX, lonTX, elTX, latRX, lonRX, ...
+            elRX, lambda, noisyDop);
     
         %AzEl
         [azRX,elevRX,slantRangeRX] = ecef2aer(recef(1,:)*10^3,recef(2,:)*10^3, ...
@@ -323,6 +329,7 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         yyaxis left
         divDop = (f_doppler / cte);
         divDop(mask) = NaN;
+
         hold on
         h = plot(tsince, divDop,'-','Tag','Left','DisplayName',sat.Name);
         hold off
@@ -345,7 +352,7 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         legend('Location', 'best')
 
         subplot(1,2,2)
-        divDop2 = (freq+(f_doppler/cte))/10^6;
+        divDop2 = (freq+f_doppler)/10^6;
         divDop2(mask) = NaN;
         hold on
         plot(divDop2,tsince,'-','Tag','Right','DisplayName',sat.Name);
@@ -355,7 +362,8 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         ylabel('Time [min]')
         ylim([-5 5])
         delta = 0.001;
-        xlabel([(freq/1e6)-delta (freq/1e6)+delta])
+        % xlabel([(freq/1e6)-delta (freq/1e6)+delta])
+        xlabel('Frequency [MHz]')
         ytickformat('%.4f') 
         % Set up the data cursor mode with a custom function
         dcm = datacursormode(fig7);
@@ -447,7 +455,28 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         set(fig11, 'Position', [centerX, botY, 560, 420]);
         dcm = datacursormode(fig11);
         set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));
-
+        % Figure 12---------------------------------------------------------------------------------
+        fig12 = figure(12);
+        divDop3 = (freq+(noisyDop/cte))/10^6;
+        divDop3(mask) = NaN;
+        divDop4 = (freq+(optimizedDop/cte))/10^6;
+        divDop4(mask) = NaN;
+        hold on
+        % plot(divDop2,tsince,'DisplayName','OG Doppler');
+        plot(divDop3,tsince,'DisplayName','Noisy Doppler');
+        plot(divDop4,tsince,'DisplayName','Optimized Doppler');
+        hold off
+        grid on;
+        xlabel('Frequencies [MHz]')
+        ylabel('Time [min]')
+        ylim([-5 5])
+        xlabel('Frequency [MHz]')
+        ytickformat('%.4f') 
+        legend('Location','best')
+        % Set up the data cursor mode with a custom function
+        dcm = datacursormode(fig11);
+        set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));   
+        set(fig12, 'Position', [centerX, 3*topY/5, 560, 420]);
 
     end
 end

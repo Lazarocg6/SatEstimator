@@ -1,4 +1,4 @@
-function [recef,vecef,rlla,vlla,tsince_out] = propagar(sat,instante,duracion,precision,filenameEOP,f,Re)
+function [recef,vecef,rlla,vlla,tsince_out] = propagar(sat,instante,duracion,precision,filenameEOP,f,Re,customEpoch)
 %PROPAGAR Funcion que calcula posicion y velocidad tanto en ECEF como en LLA 
 %   Precision y duracion en minutos
     format long g
@@ -47,8 +47,11 @@ function [recef,vecef,rlla,vlla,tsince_out] = propagar(sat,instante,duracion,pre
     rNo = str2double(tline(65:end));               % Revolution Number at Epoch
     
     fclose(fid);
-    
-    satdata.epoch = epoch;
+    if isnan(customEpoch)
+        satdata.epoch = epoch;
+    else
+        satdata.epoch = customEpoch;
+    end
     satdata.norad_number = Cnum;
     satdata.bulletin_number = ID;
     satdata.classification = SC; % almost always 'U'
@@ -64,18 +67,7 @@ function [recef,vecef,rlla,vlla,tsince_out] = propagar(sat,instante,duracion,pre
     satdata.xndd6o = TD2 * 10^ExTD2 * TWOPI / MINUTES_PER_DAY_CUBED;
     satdata.bstar = BStar;
 
-    fraction = epoch-floor(epoch);
-    total_hours = fraction * 24;  % Convert to total hours
-    epochH = floor(total_hours);   % Get whole hours
-    epochM = floor((total_hours - epochH) * 60);  % Get whole minutes
-    epochS = floor(((total_hours - epochH) * 60 - epochM) * 60);  % Get seconds
-    epochMS = floor((((total_hours - epochH) * 60 - epochM) * 60 - epochS)*1000);
-
-    dateVal = datetime(year, 1, 1) + days(doy - 1); % Convert DOY to date
-    monthNum = month(dateVal);  % Extract the month
-    dayNum = day(dateVal, 'dayofmonth');
-
-    epochDaytime = datetime(year+2000,monthNum,dayNum,epochH,epochM,epochS,epochMS,'TimeZone', 'UTC');
+    epochDaytime = epochToUTC(satdata.epoch);
 
     tSinceEpoch = floor(minutes(instante-epochDaytime));
 
