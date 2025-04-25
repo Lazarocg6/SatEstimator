@@ -1,6 +1,8 @@
-function updateEOP(lastUpdate,filenameEOP)
+function updateEOP(lastUpdate)
 %UPDATEEOP Update EOP if last update was longer than lastUpdate hours ago 
 %   Detailed explanation goes here
+
+    filenameEOP = 'EOP-All.txt';
 
     if isfile(filenameEOP)  % Check if the file exists
         fid = fopen(filenameEOP, 'r');  % Open for reading only

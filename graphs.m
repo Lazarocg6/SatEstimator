@@ -1,57 +1,6 @@
 function graphs(sats,instante,duracion,precision,RX,filter)
     format long g
 
-    %Filter parameters
-    elevMinTX = 10; % degrees
-    elevMaxTX = 50;
-    azMinTX = 90;
-    azMaxTX = 270;
-    elevMinRX = 10; % degrees
-    elevMaxRX = 50;
-    azMinRX = 0;
-    azMaxRX = 360;
-
-    freq = 143.050e6;% frequency in hertz
-    f = 1/298.26; % WGS72 Parameters
-    Re = 6378135; % WGS72 Parameters
-    lambda = 3e8/freq;
-    
-    addpath('SGP4_Vectorized')
-
-    % RADAR eq params
-
-    eirp_tx = 1e6; % EIRP power TX [Watts]
-    RCSb = 5; % bistatic RCS [meters^2]
-
-    Grx = 2.15; % Gain RX [dB]
-    Lsys = 3; % System loses RX [dB]
-    Fs = 3; % Noise figure RX [dB]
-    Brx = 0.25e6;% BW RX [Hz]
-    Tint = 1; % Integration time [s]
-
-    % GRAVES coords
-
-    latGRAVES = 47.34813145826119;
-    lonGRAVES = 5.51487314868131;
-    elGRAVES = 180; % Average altitude
-    
-    % Coordinates to be used
-    latTX = latGRAVES;
-    lonTX = lonGRAVES;
-    elTX = elGRAVES;
-    latRX = RX(1);
-    lonRX = RX(2);
-    elRX = RX(3);
-    
-    n_sats = length(sats);
-    
-    %EOP.txt filename
-    filenameEOP = 'EOP-All.txt';  
-    
-    updateEOP(24*2, filenameEOP); % Update EOP every 24 hours
-    
-    updateTLE(6, sats); % Update TLE every 6 hours
-
     % Custom functions-----------------------------------------------------------------------------
     % Add UTC time function
     function out_txt = addUTC(event_obj,UTCtime)
@@ -144,11 +93,6 @@ function graphs(sats,instante,duracion,precision,RX,filter)
             instante, duracion, precision, filenameEOP, f, Re, NaN);
         
         rlla = evitarSaltos(rlla_out); 
-        
-        % UTC times
-        t = instante+minutes(tsince);
-        t.Format = 'dd-MMM HH:mm:ss';
-        t.TimeZone = 'Local';
     
         %Bistatic parameters
         [bistaticRange, bistaticVelocity, R1, R2, llaDIST, ecefDIST] = bistaticParams(latTX, ...
@@ -157,11 +101,28 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         %Doppler
         f_doppler = (bistaticVelocity*1000)./-lambda;
 
+        dop = paramsToDop(NaN,tsince);
+
+        % UTC times
+        t = instante+minutes(tsince);
+        t.Format = 'dd-MMM HH:mm:ss';
+        t.TimeZone = 'Local';
+
+%  _____ _____      ______          _            
+% |  ___|  _  |     | ___ \        | |           
+% | |__ | | | |     | |_/ /__ _  __| | __ _ _ __ 
+% |  __|| | | |     |    // _` |/ _` |/ _` | '__|
+% | |___\ \/' /     | |\ \ (_| | (_| | (_| | |   
+% \____/ \_/\_\     \_| \_\__,_|\__,_|\__,_|_|
+
+        l_sys = 10^(Lsys/10);
+        g_rx = 10^(Grx/10);
+        fs = 10^(Fs/10);
+
+        snr = snr_in(eirp_tx,g_rx,lambda,RCSb,R1,R2,l_sys,fs,Tint);
+
         %Gradient descent
-        noisyDop = noiseGen(f_doppler);
-        optimizedDop = gradDescent(sat, instante, duracion, precision, ...
-            filenameEOP, f, Re, latTX, lonTX, elTX, latRX, lonRX, ...
-            elRX, lambda, noisyDop);
+        noisyDop = noiseGen(f_doppler,ID);
     
         %AzEl
         [azRX,elevRX,slantRangeRX] = ecef2aer(recef(1,:)*10^3,recef(2,:)*10^3, ...
@@ -177,14 +138,6 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         else
             mask = ones(1,length(elevRX));
         end
-
-        % RADAR equation
-
-        l_sys = 10^(Lsys/10);
-        g_rx = 10^(Grx/10);
-        fs = 10^(Fs/10);
-
-        snr = snr_in(eirp_tx,g_rx,lambda,RCSb,R1,R2,l_sys,fs,Tint);
         
         % Figures----------------------------------------------------------------------------------
         leftX = 0;
@@ -456,27 +409,27 @@ function graphs(sats,instante,duracion,precision,RX,filter)
         dcm = datacursormode(fig11);
         set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));
         % Figure 12---------------------------------------------------------------------------------
-        fig12 = figure(12);
-        divDop3 = (freq+(noisyDop/cte))/10^6;
-        divDop3(mask) = NaN;
-        divDop4 = (freq+(optimizedDop/cte))/10^6;
-        divDop4(mask) = NaN;
-        hold on
-        % plot(divDop2,tsince,'DisplayName','OG Doppler');
-        plot(divDop3,tsince,'DisplayName','Noisy Doppler');
-        plot(divDop4,tsince,'DisplayName','Optimized Doppler');
-        hold off
-        grid on;
-        xlabel('Frequencies [MHz]')
-        ylabel('Time [min]')
-        ylim([-5 5])
-        xlabel('Frequency [MHz]')
-        ytickformat('%.4f') 
-        legend('Location','best')
-        % Set up the data cursor mode with a custom function
-        dcm = datacursormode(fig11);
-        set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));   
-        set(fig12, 'Position', [centerX, 3*topY/5, 560, 420]);
+        % fig12 = figure(12);
+        % divDop3 = (freq+(noisyDop/cte))/10^6;
+        % divDop3(mask) = NaN;
+        % divDop4 = (freq+(optimizedDop/cte))/10^6;
+        % divDop4(mask) = NaN;
+        % hold on
+        % % plot(divDop2,tsince,'DisplayName','OG Doppler');
+        % plot(divDop3,tsince,'DisplayName','Noisy Doppler');
+        % plot(divDop4,tsince,'DisplayName','Optimized Doppler');
+        % hold off
+        % grid on;
+        % xlabel('Frequencies [MHz]')
+        % ylabel('Time [min]')
+        % ylim([-5 5])
+        % xlabel('Frequency [MHz]')
+        % ytickformat('%.4f') 
+        % legend('Location','best')
+        % % Set up the data cursor mode with a custom function
+        % dcm = datacursormode(fig11);
+        % set(dcm, 'UpdateFcn', @(obj, event) addUTC(event,t));   
+        % set(fig12, 'Position', [centerX, 3*topY/5, 560, 420]);
 
     end
 end

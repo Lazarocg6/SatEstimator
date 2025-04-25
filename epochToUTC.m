@@ -15,7 +15,7 @@ function [epochDaytime] = epochToUTC(epoch)
     monthNum = month(dateVal);  % Extract the month
     dayNum = day(dateVal, 'dayofmonth');
 
-    epochDaytime = datetime(year,monthNum,dayNum,epochH,epochM,epochS,epochMS,'TimeZone', 'UTC');
+    epochDaytime = datetime(year,monthNum,dayNum,epochH,epochM,epochS,epochMS,'TimeZone', 'Local');
 
 end
 

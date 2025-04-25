@@ -13,12 +13,12 @@ function [bistaticRange,bistaticVelocity,R1,R2,baselineLength,baselineECEF] = bi
 
     baselineECEF = sqrt((ecefTX(1)-ecefRX(1))^2+(ecefTX(2)-ecefRX(2))^2+(ecefTX(3)-ecefRX(3))^2);
 
-    bistaticVelocity = zeros(1,length(recefSATS));
-    bistaticRange = zeros(1,length(recefSATS));
-    R1 = zeros(1,length(recefSATS));
-    R2 = zeros(1,length(recefSATS));
+    bistaticVelocity = zeros(1,size(recefSATS,2));
+    bistaticRange = zeros(1,size(recefSATS,2));
+    R1 = zeros(1,size(recefSATS,2));
+    R2 = zeros(1,size(recefSATS,2));
 
-    for i=1:length(recefSATS)
+    for i=1:size(recefSATS,2)
         R1(i) = sqrt((ecefTX(1)-recefSATS(1,i))^2+(ecefTX(2)-recefSATS(2,i))^2+(ecefTX(3)-recefSATS(3,i))^2);
         R2(i) = sqrt((ecefRX(1)-recefSATS(1,i))^2+(ecefRX(2)-recefSATS(2,i))^2+(ecefRX(3)-recefSATS(3,i))^2);
         bistaticRange(i)= R1(i) + R2(i) - baselineECEF;
