@@ -1,32 +1,16 @@
 clc
 clear
 
+freq = 143.050e6;
 inst = datetime('now', 'TimeZone', 'Local'); %Time origin
-% inst = datetime('24-Apr 07:47:22','InputFormat','dd-MMM HH:mm:ss',TimeZone='Local');
-duracion = 60; % In minutes, 'duracion' before and after the current time
+inst = datetime('28-Apr 09:24:22','InputFormat','dd-MMM HH:mm:ss',TimeZone='Local');
+duracion = 120; % In minutes
 precision = 10 / 60; % Precision in minutes
 
-[time, DTtime] = initTimes(inst, duracion, precision);
+fitter = true;
+propagateB4andafter = true; % False propaga hacia delante desde inst
+azelFilter = true;
 
-[ydata, epochd, epoch_og] = noiseGen(time,25544);
+[time, DTtime] = initTimes(inst, duracion, precision,propagateB4andafter);
 
-fun = @(x, xdata) paramsToDop(x, xdata);
-
-x0 = [epoch_og];
-
-res = lsqcurvefit(@paramsToDop,x0,time,ydata);
-fprintf('Epoch diff = %s, noisy ->%10.10f, fitted ->%10.10f\n', (epochToUTC(epochd)-epochToUTC(res)),epochd,res)
-
-fitted = paramsToDop(res,time);
-og = paramsToDop(NaN,time);
-
-figure(1)
-plot(DTtime, ydata)
-hold on
-plot(DTtime,fitted)
-plot(DTtime,og)
-hold off
-grid on
-legend('Noisy','Fitted','Original')
-
-
+graphs(time, DTtime, fitter,inst,azelFilter,freq)

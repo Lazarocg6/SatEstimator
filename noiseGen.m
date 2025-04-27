@@ -11,7 +11,7 @@ function [noisy,epochd,epoch] = noiseGen(time,ID)
     f_doppler = paramsToDop(epochd,time);
 
     mean = 0;
-    stdDeviation = 0.3;
+    stdDeviation = 0.2;
     l = length(f_doppler);
     n = randn(1,l)*stdDeviation+mean;
 

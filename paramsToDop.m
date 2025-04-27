@@ -1,4 +1,5 @@
-function f_doppler = paramsToDop(epoch_in,time)
+function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
+    R1, R2, snr, NAME, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(epoch_in,time)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -13,20 +14,11 @@ function f_doppler = paramsToDop(epoch_in,time)
 % | (_| (_) | | | \__ \ || (_| | | | | ||  __/\__ \
 %  \___\___/|_| |_|___/\__\__,_|_| |_|\__\___||___/
 
-    ID = 25544; % NORADID de la ISS
+    ID = 25544; % NORAD ID de la ISS
+    NAME = 'ISS';
 
     RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
     % RX = [40.6223011985758, -4.010124224894723, 930]; % Coords Villalba
-
-    %Filter parameters
-    elevMinTX = 10; % degrees
-    elevMaxTX = 50;
-    azMinTX = 90;
-    azMaxTX = 270;
-    elevMinRX = 10; % degrees
-    elevMaxRX = 50;
-    azMinRX = 0;
-    azMaxRX = 360;
 
     freq = 143.050e6;% frequency in hertz
     f = 1/298.26; % WGS72 Parameters
@@ -41,7 +33,7 @@ function f_doppler = paramsToDop(epoch_in,time)
     Grx = 2.15; % Gain RX [dB]
     Lsys = 3; % System loses RX [dB]
     Fs = 3; % Noise figure RX [dB]
-    Brx = 0.25e6;% BW RX [Hz]
+    % Brx = 0.25e6;% BW RX [Hz]
     Tint = 1; % Integration time [s]
 
     % GRAVES coords
@@ -82,7 +74,7 @@ function f_doppler = paramsToDop(epoch_in,time)
     Cnum = tline(3:7);      			        % Catalog Number (NORAD)
     SC   = tline(8);					        % Security Classification
     ID   = tline(10:17);			            % Identification Number
-    % year = str2double(tline(19:20));               % Year
+    % year2 = str2double(tline(19:20));               % Year
     % doy  = str2double(tline(21:32));               % Day of year
     epoch = str2double(tline(19:32));              % Epoch
     TD1   = str2double(tline(34:43));              % first time derivative
@@ -185,7 +177,7 @@ function f_doppler = paramsToDop(epoch_in,time)
     vlla = zeros(3,num);
     
     year2 = year(epochToUTC(satdata.epoch));
-    doy = day(epochToUTC(satdata.epoch),"dayofyear");
+    doy = satdata.epoch-((year2-2000)*1000);
 
     [mon,day2,hr,minute,sec] = days2mdh(year2,doy);
     MJD_Epoch = Mjday(year2,mon,day2,hr,minute,sec);
@@ -232,6 +224,19 @@ function f_doppler = paramsToDop(epoch_in,time)
 %            |_|   |_|
 
         f_doppler = (bistaticVelocity)./(-lambda);
+
+%  _____ _____      ______          _            
+% |  ___|  _  |     | ___ \        | |           
+% | |__ | | | |     | |_/ /__ _  __| | __ _ _ __ 
+% |  __|| | | |     |    // _` |/ _` |/ _` | '__|
+% | |___\ \/' /     | |\ \ (_| | (_| | (_| | |   
+% \____/ \_/\_\     \_| \_\__,_|\__,_|\__,_|_|
+
+        l_sys = 10^(Lsys/10);
+        g_rx = 10^(Grx/10);
+        fs = 10^(Fs/10);
+
+        snr = snr_in(eirp_tx,g_rx,lambda,RCSb,R1,R2,l_sys,fs,Tint);
 
 end
 
