@@ -185,8 +185,6 @@ geolimits([35 50], [-14 14])
 
 % Set up the data cursor mode with a custom function
 dcm = datacursormode(fig3);
-% set(dcm, 'UpdateFcn', @(obj, event) displayTime(event, time, ...
-%     latTX, lonTX, elTX, latRX, lonRX, elRX));
 
 set(dcm, 'UpdateFcn', @(obj, event) displayTime(event, latTX, lonTX, ...
     elTX, latRX, lonRX, elRX));
@@ -247,7 +245,7 @@ ylabel('Elevation [º]')
 title('Position relative to RX')
 xlabel('Time')
 grid on
-set(fig8, 'Position', [leftX, 3*topY/5, 560, 420]);
+set(fig8, 'Position', [rightX, botY, 560, 420]);
 
 % Figure 9---------------------------------------------------------------------------------
 fig9 = figure(9);
@@ -279,10 +277,9 @@ title('Position relative to TX')
 xlabel('Time [min]')
 
 grid on
-set(fig9, 'Position', [rightX, 3*topY/5, 560, 420]);
+set(fig9, 'Position', [leftX, topY, 560, 420]);
 
 % Figure 7---------------------------------------------------------------------------------
-cte = 1000;
 fig7 = figure(7);
 subplot(1,2,1)
 yyaxis left
@@ -314,6 +311,9 @@ subplot(1,2,2)
 divDop2 = (freq+f_doppler)/10^6;
 divDop2(mask) = NaN;
 hold on
+if filter
+    plot((freq+f_doppler)/10^6,DTtime,'-','Tag','Right','DisplayName',name,'LineStyle',':');
+end
 plot(divDop2,DTtime,'-','Tag','Right','DisplayName',name);
 hold off
 grid on;
@@ -354,5 +354,81 @@ if fitter
     legend('Noisy','Fitted','Original')
     set(figfit, 'Position', [leftX, topY, 560, 420]);
 end
+
+% Figure 10---------------------------------------------------------------------------------
+fig10 = figure(10);
+
+subplot(1,3,1)
+
+hold on
+if filter
+    plot(DTtime(2:end), diff(f_doppler),'-','Tag','Left','DisplayName',name,'LineStyle',':');
+end
+plot(DTtime(2:end), diff(divDop),'-');
+hold off
+
+grid on;
+title('Doppler derivative')
+xlabel('Time')
+ylabel('Doppler frequency derivative')
+
+subplot(1,3,2)
+
+ct = 1e3;
+
+tint = @(var) sqrt(1./abs(diff(var)));
+
+hold on
+if filter
+    plot(DTtime(2:end), tint(f_doppler).*ct,'-','Tag','Left','DisplayName',name,'LineStyle',':');
+end
+
+plot(DTtime(2:end), tint(divDop)*ct,'-');
+tintmin_i = find(tint(f_doppler) == min(tint(f_doppler)));
+tint_fdop = tint(f_doppler);
+plot(DTtime(tintmin_i), tint_fdop(tintmin_i).*ct,'ok');
+
+lims = [tint_fdop(tintmin_i)*0.2*ct tint_fdop(tintmin_i)*5*ct];
+ylim(lims);
+
+hold off
+
+grid on;
+title('Max integration time')
+xlabel('Time')
+ylabel('Integration time [ms]')
+
+subplot(1,3,3)
+
+fs = 5e6;
+
+fft_size = @(var) ceil(log2(var.*fs));
+
+hold on
+if filter
+    plot(DTtime(2:end),fft_size(tint(f_doppler)),'LineStyle',':')
+end
+
+plot(DTtime(2:end),fft_size(tint(divDop)))
+
+fft_size_fdop = fft_size(tint(f_doppler));
+
+plot(DTtime(tintmin_i), fft_size_fdop(tintmin_i),'ok');
+
+hold off
+try
+    ylim(fft_size(lims/ct))
+catch
+end
+grid on;
+title(sprintf('FFT size (F_s = %1.2e Hz)',fs))
+xlabel('Time')
+ylabel('n (2^n)')
+
+set(fig10, 'Position', [centerX-520, botY, 3*520, 420]);
+
+% % Figure 12---------------------------------------------------------------------------------
+% figure(12)
+% plot(DTtime,bistaticVelocity)
 
 end

@@ -72,3 +72,6 @@ yarn-error.log
 # Git and version control
 .git/
 *.gitattributes
+
+#Simulink
+SDR/slprj/

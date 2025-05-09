@@ -15,7 +15,9 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
 %  \___\___/|_| |_|___/\__\__,_|_| |_|\__\___||___/
 
     ID = 25544; % NORAD ID de la ISS
+    ID = 48274;
     NAME = 'ISS';
+    NAME = 'CSS';
 
     RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
     % RX = [40.6223011985758, -4.010124224894723, 930]; % Coords Villalba
@@ -30,11 +32,13 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     eirp_tx = 1e6; % EIRP power TX [Watts]
     RCSb = 5; % bistatic RCS [meters^2]
 
-    Grx = 2.15; % Gain RX [dB]
+    Grx = 14; % Gain RX [dB]
     Lsys = 3; % System loses RX [dB]
-    Fs = 3; % Noise figure RX [dB]
+    Fs = 6; % Noise figure RX [dB]
     % Brx = 0.25e6;% BW RX [Hz]
-    Tint = 1; % Integration time [s]
+    SR = 5e6; % Sample rate
+    fft_size = 2^14;
+    Tint = fft_size/SR; % Integration time [s]
 
     % GRAVES coords
 
