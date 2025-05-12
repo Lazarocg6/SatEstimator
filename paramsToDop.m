@@ -14,10 +14,12 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
 % | (_| (_) | | | \__ \ || (_| | | | | ||  __/\__ \
 %  \___\___/|_| |_|___/\__\__,_|_| |_|\__\___||___/
 
-    ID = 25544; % NORAD ID de la ISS
-    ID = 48274;
-    NAME = 'ISS';
-    NAME = 'CSS';
+    % NAME = 'ISS';
+    % ID = 25544; % NORAD ID de la ISS
+    % NAME = 'CSS';
+    % ID = 48274;
+    NAME = 'STARLINK34058';
+    ID = 63818;
 
     RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
     % RX = [40.6223011985758, -4.010124224894723, 930]; % Coords Villalba
@@ -37,7 +39,7 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     Fs = 6; % Noise figure RX [dB]
     % Brx = 0.25e6;% BW RX [Hz]
     SR = 5e6; % Sample rate
-    fft_size = 2^14;
+    fft_size = 2^16;
     Tint = fft_size/SR; % Integration time [s]
 
     % GRAVES coords

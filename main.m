@@ -3,9 +3,9 @@ clear
 
 freq = 143.050e6;
 inst = datetime('now', 'TimeZone', 'Local'); %Time origin
-inst = datetime('10-May 09:25:22','InputFormat','dd-MMM HH:mm:ss',TimeZone='Local');
-duracion = 600; % In minutes
-precision = 60 / 60; % Precision in minutes
+inst = datetime('12-May 00:30:22','InputFormat','dd-MMM HH:mm:ss',TimeZone='Local');
+duracion = 30; % In minutes
+precision = 1 / 60; % Precision in minutes
 
 fitter = false;
 propagateB4andafter = true; % False propaga hacia delante desde inst

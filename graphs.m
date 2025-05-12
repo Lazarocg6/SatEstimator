@@ -6,6 +6,16 @@ close all
 [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     R1, R2, snr, name, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(NaN,time);
 
+% ______                             
+% | ___ \                            
+% | |_/ /_ _ _ __ __ _ _ __ ___  ___ 
+% |  __/ _` | '__/ _` | '_ ` _ \/ __|
+% | | | (_| | | | (_| | | | | | \__ \
+% \_|  \__,_|_|  \__,_|_| |_| |_|___/
+
+fs = 5e6; % Sample rate
+DF = 170; % Decimation factor
+
 %   ___      _____ _     ______ _ _ _            
 %  / _ \    |  ___| |    |  ___(_) | |           
 % / /_\ \___| |__ | |    | |_   _| | |_ ___ _ __ 
@@ -387,6 +397,7 @@ plot(DTtime(2:end), tint(divDop)*ct,'-');
 tintmin_i = find(tint(f_doppler) == min(tint(f_doppler)));
 tint_fdop = tint(f_doppler);
 plot(DTtime(tintmin_i), tint_fdop(tintmin_i).*ct,'ok');
+ax1 = gca;
 
 lims = [tint_fdop(tintmin_i)*0.2*ct tint_fdop(tintmin_i)*5*ct];
 ylim(lims);
@@ -400,9 +411,9 @@ ylabel('Integration time [ms]')
 
 subplot(1,3,3)
 
-fs = 5e6;
+BB_FS = fs/DF;
 
-fft_size = @(var) ceil(log2(var.*fs));
+fft_size = @(tau) floor(log2(tau.*BB_FS));
 
 hold on
 if filter
@@ -414,6 +425,7 @@ plot(DTtime(2:end),fft_size(tint(divDop)))
 fft_size_fdop = fft_size(tint(f_doppler));
 
 plot(DTtime(tintmin_i), fft_size_fdop(tintmin_i),'ok');
+ax2 = gca;
 
 hold off
 try
@@ -421,11 +433,14 @@ try
 catch
 end
 grid on;
-title(sprintf('FFT size (F_s = %1.2e Hz)',fs))
+title(sprintf('FFT Size (F_s = %1.2e Hz & DF = %i)',fs,DF))
 xlabel('Time')
-ylabel('n (2^n)')
+ylabel('n (FFT size = 2^n)')
 
 set(fig10, 'Position', [centerX-520, botY, 3*520, 420]);
+
+set(ax2, 'XLim', get(ax1, 'XLim'));
+linkaxes([ax1 ax2], 'x')
 
 % % Figure 12---------------------------------------------------------------------------------
 % figure(12)
