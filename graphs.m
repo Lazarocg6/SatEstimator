@@ -292,7 +292,7 @@ set(fig9, 'Position', [leftX, topY, 560, 420]);
 % Figure 7---------------------------------------------------------------------------------
 fig7 = figure(7);
 subplot(1,2,1)
-yyaxis left
+% yyaxis left
 divDop = f_doppler;
 divDop(mask) = NaN;
 
@@ -303,31 +303,40 @@ end
 plot(DTtime, divDop,'-');
 hold off
 ylabel('Doppler frequency [Hz]')
-yyaxis right
-ylim([min(min(f_doppler)) max(max(f_doppler))])
-ytickformat('%.4f') 
-ax2 = gca;
-axCol = 'black';
-ax2.YAxis(1).Color = axCol;
-ax2.YAxis(2).Color = axCol;
-ylim((ylim + freq)/10^6);
-ylabel('RX frequency [MHz]')
+% yyaxis right
+% ylim([min(min(f_doppler)) max(max(f_doppler))])
+% ytickformat('%.4f') 
+% ax2 = gca;
+% axCol = 'black';
+% ax2.YAxis(1).Color = axCol;
+% ax2.YAxis(2).Color = axCol;
+% ylim((ylim + freq)/10^6);
+ylabel('Doppler frequency [Hz]')
 grid on
 sgtitle('Doppler')
 xlabel('Time')
 % legend('Location', 'best')
 
 subplot(1,2,2)
-divDop2 = (freq+f_doppler)/10^6;
+divDop2 = f_doppler;
 divDop2(mask) = NaN;
 hold on
 if filter
-    plot((freq+f_doppler)/10^6,DTtime,'-','Tag','Right','DisplayName',name,'LineStyle',':');
+    plot(f_doppler,DTtime,'-','Tag','Right','DisplayName',name,'LineStyle',':');
 end
 plot(divDop2,DTtime,'-','Tag','Right','DisplayName',name);
+
+if true
+    load('detections130520250037.mat','detections_out','f_axis','t_axis')
+    [fila,columna] = find(detections_out);
+    x = f_axis(columna);
+    y = t_axis(fila);
+    scatter(x,y,'.')
+end
+
 hold off
 grid on;
-xlabel('Frequencies [MHz]')
+xlabel('Doppler Frequency [Hz]')
 ylabel('Time')
 ylim([inst-minutes(5) inst+minutes(5)])
 ax3 = gca;

@@ -6,7 +6,8 @@ medidas_dir = "C:\Users\lazar\Desktop\ETSIT\MUIT\TFM\Medidas\";
 addpath(medidas_dir)
 
 % load(medidas_dir+"Procesadas/CSS_070520251050/070520251050IMP.mat")
-load(medidas_dir+"130520250035STARLINK33978CREO.mat")
+load(medidas_dir+"Procesadas/STARLINK_130520250037/130520250035STARLINK34058CREO.mat")
+% load(medidas_dir+"130520250035STARLINK33978CREO.mat")
 % load("120520252045NOSE.mat")
 
 % % Comentar si no son medidas antiguas -------------------------------------
@@ -23,6 +24,9 @@ load(medidas_dir+"130520250035STARLINK33978CREO.mat")
 IQ_abs = abs(IQ);
 
 flim = BB_sample_rate/2;
+
+f_axis = linspace(-flim,flim,size(IQ,2));
+t_axis = init_t+seconds(t(:,1)');
 
 %Mapa clutter
 
@@ -98,7 +102,7 @@ dynamicRange = [31 40]; % Con lna dipolo
 dynamicRange = [29 33]; % Con lna dipolo 2
 
 figure(1)
-imagesc(linspace(-flim,flim,size(IQ,1)),init_t+seconds(t(:,1)'),10.*log10(abs(IQ_abs)));
+imagesc(f_axis,t_axis,10.*log10(abs(IQ_abs)));
 xlim([-6e3,6e3])
 clim(dynamicRange)
 xlabel('Frequency [Hz]')
@@ -108,40 +112,40 @@ ax1 = gca;
 
 
 % figure(2)
-% imagesc(linspace(-flim,flim,size(IQ,1)),init_t+seconds(t(:,1)'),10.*log10(abs(filtered)));
+% imagesc(f_axis,t_axis,10.*log10(abs(filtered)));
 % ax4 = gca;
 % title('Clutter map')
 % clim(dynamicRange)
 
 
 % figure(3)
-% imagesc(linspace(-flim,flim,size(IQ,1)),init_t+seconds(t(:,1)'),10.*log10(abs(decluttered)));
+% imagesc(f_axis,t_axis,10.*log10(abs(decluttered)));
 % ax3 = gca;
 % clim(dynamicRange)
 % title('Decluttered')
 
 figure(4)
-imagesc(linspace(-flim,flim,size(IQ,1)),init_t+seconds(t(:,1)'),detections);
+imagesc(f_axis,t_axis,detections);
 title('CFAR Detections')
 ax2 = gca;
 
 figure(5)
-imagesc(linspace(-flim,flim,size(IQ,1)),init_t+seconds(t(:,1)'),10.*log10(noise_estimate))
+imagesc(f_axis,t_axis,10.*log10(noise_estimate))
 title('Noise Estimate')
 ax5 = gca;
 
 figure(6)
-imagesc(linspace(-flim,flim,size(IQ,1)),init_t+seconds(t(:,1)'),convolution)
+imagesc(f_axis,t_axis,convolution)
 title('Clusters')
 ax6 = gca;
 
 figure(7)
-imagesc(linspace(-flim,flim,size(IQ,1)),init_t+seconds(t(:,1)'),detections_2);
+imagesc(f_axis,t_axis,detections_2);
 title('Cluster Detections')
 ax7 = gca;
 
 figure(8)
-imagesc(linspace(-flim,flim,size(IQ,1)),init_t+seconds(t(:,1)'),detections_out);
+imagesc(f_axis,t_axis,detections_out);
 title('Detections')
 ax8 = gca;
 
