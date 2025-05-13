@@ -1,5 +1,5 @@
 function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
-    R1, R2, snr, NAME, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(epoch_in,time)
+    R1, R2, snr, NAME, ID, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(epoch_in,time)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -18,7 +18,7 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     % ID = 25544; % NORAD ID de la ISS
     % NAME = 'CSS';
     % ID = 48274;
-    NAME = 'STARLINK33978';
+    NAME = 'STARLINK33984';
     ID = 63830;
 
     % RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
@@ -79,7 +79,7 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     tline = fgetl(fid);
     Cnum = tline(3:7);      			        % Catalog Number (NORAD)
     SC   = tline(8);					        % Security Classification
-    ID   = tline(10:17);			            % Identification Number
+    ID2   = tline(10:17);			            % Identification Number
     % year2 = str2double(tline(19:20));               % Year
     % doy  = str2double(tline(21:32));               % Day of year
     epoch = str2double(tline(19:32));              % Epoch
@@ -109,8 +109,9 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     else
         satdata.epoch = epoch_in;
     end
+
     satdata.norad_number = Cnum;
-    satdata.bulletin_number = ID;
+    satdata.bulletin_number = ID2;
     satdata.classification = SC; % almost always 'U'
     satdata.revolution_number = rNo;
     satdata.ephemeris_type = Etype;

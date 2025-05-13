@@ -1,10 +1,30 @@
-function graphs(time,DTtime,fitter,inst,filter,freq)
+function graphs(time,DTtime,fitter,fitterType,inst,filter,freq)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 close all
 
 [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
-    R1, R2, snr, name, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(NaN,time);
+    R1, R2, snr, name, ID, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(NaN,time);
+
+%  _____     _  ______      _        
+% |  ___|   | | |  _  \    | |       
+% | |____  _| |_| | | |__ _| |_ __ _ 
+% |  __\ \/ / __| | | / _` | __/ _` |
+% | |___>  <| |_| |/ / (_| | || (_| |
+% \____/_/\_\\__|___/ \__,_|\__\__,_|
+
+load('detections130520250037.mat','detections_out','f_axis','t_axis')
+
+x_range = 900:1100;
+y_range = 2070:2300;
+
+[fila,columna] = find(detections_out(y_range,x_range));
+x = f_axis(x_range);
+x = x(columna);
+y = t_axis(y_range);
+y = y(fila);
+y = datenum(y);
+xdata = datetime(y,'ConvertFrom','datenum','TimeZone','local');
 
 % ______                             
 % | ___ \                            
@@ -13,6 +33,7 @@ close all
 % | | | (_| | | | (_| | | | | | \__ \
 % \_|  \__,_|_|  \__,_|_| |_| |_|___/
 
+% Para calcular el tiempo de integracion maximo
 fs = 5e6; % Sample rate
 DF = 170; % Decimation factor
 
@@ -60,16 +81,35 @@ else
     mask = ones(1,length(elevRX));
 end
 
-if fitter
+%  _                    _   _____                                 
+% | |                  | | /  ___|                                
+% | |     ___  __ _ ___| |_\ `--.  __ _ _   _  __ _ _ __ ___  ___ 
+% | |    / _ \/ _` / __| __|`--. \/ _` | | | |/ _` | '__/ _ \/ __|
+% | |___|  __/ (_| \__ \ |_/\__/ / (_| | |_| | (_| | | |  __/\__ \
+% \_____/\___|\__,_|___/\__\____/ \__, |\__,_|\__,_|_|  \___||___/
+%                                    | |                          
+%                                    |_|
 
-    [ydata, epochd, epoch_og] = noiseGen(time,25544);
+if fitter
+    if strcmp(fitterType,'sim')
+        [ydata, epochd,epoch_og] = noiseGen(time,ID);
+        x0 = [epoch_og];
+        res = lsqcurvefit(@paramsToDop,x0,time,ydata);
+        fprintf('Epoch diff = %s, noisy ->%10.10f, fitted ->%10.10f\n', (epochToUTC(epochd)-epochToUTC(res)),epochd,res)
+        fitted = paramsToDop(res,time);
+
+    elseif strcmp(fitterType,'real')
+        fid = fopen([fullfile('TLEs',int2str(ID)),'.txt'],'rt');
+        tline = fgetl(fid);
+        tline = fgetl(fid);
+        epoch_og = str2double(tline(19:32));
+        ydata = x;
+        x0 = [epoch_og];
+        res = lsqcurvefit(@paramsToDop,x0,y,ydata);
+        fprintf('Epoch diff = %s, original ->%10.10f, fitted ->%10.10f\n', (epochToUTC(epoch_og)-epochToUTC(res)),epoch_og,res)
+        fitted = paramsToDop(res,time);
+    end
     
-    x0 = [epoch_og];
-    
-    res = lsqcurvefit(@paramsToDop,x0,time,ydata);
-    fprintf('Epoch diff = %s, noisy ->%10.10f, fitted ->%10.10f\n', (epochToUTC(epochd)-epochToUTC(res)),epochd,res)
-    
-    fitted = paramsToDop(res,time);
 end
 
 
@@ -326,12 +366,10 @@ if filter
 end
 plot(divDop2,DTtime,'-','Tag','Right','DisplayName',name);
 
-if true
-    load('detections130520250037.mat','detections_out','f_axis','t_axis')
-    [fila,columna] = find(detections_out);
-    x = f_axis(columna);
-    y = t_axis(fila);
-    scatter(x,y,'.')
+if strcmp(fitterType,'real')
+    scatter(ydata,xdata,'.')
+    plot(fitted,DTtime,'-','Tag','Right','DisplayName',name,'LineStyle',':');
+    legend('Original','Filtered','Received','Fitted')
 end
 
 hold off
@@ -362,16 +400,30 @@ xlabel('Time')
 grid on
 set(fig11, 'Position', [centerX, botY, 560, 420]);
 
+% ------------------------------------------------------------------------------------------
 if fitter
-    figfit = figure;
-    plot(DTtime, ydata)
-    hold on
-    plot(DTtime,fitted)
-    plot(DTtime,f_doppler)
-    hold off
-    grid on
-    legend('Noisy','Fitted','Original')
-    set(figfit, 'Position', [leftX, topY, 560, 420]);
+    if strcmp(fitterType,'sim')
+        figfit = figure;
+        plot(DTtime, ydata)
+        hold on
+        plot(DTtime,fitted)
+        plot(DTtime,f_doppler)
+        hold off
+        grid on
+        legend('Noisy','Fitted','Original')
+        set(figfit, 'Position', [leftX, topY, 560, 420]);
+    % elseif strcmp(fitterType,'real')
+    %     figfit = figure;
+    %     scatter(xdata, ydata,'.')
+    %     hold on
+    %     plot(DTtime,fitted)
+    %     plot(DTtime,f_doppler)
+    %     hold off
+    %     grid on
+    %     legend('Noisy','Fitted','Original')
+    %     set(figfit, 'Position', [leftX, topY, 560, 420]);
+    end
+
 end
 
 % Figure 10---------------------------------------------------------------------------------
