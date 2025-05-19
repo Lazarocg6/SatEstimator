@@ -1,11 +1,13 @@
-function [noisy,epochd,epoch] = noiseGen(time,ID)
+function [noisy,epochd,epoch_og] = noiseGen(time,ID)
 
     fid = fopen([fullfile('TLEs',int2str(ID)),'.txt'],'rt');
     tline = fgetl(fid);
     tline = fgetl(fid);
     epoch = str2double(tline(19:32));
 
-    epochd = epoch+rand/2000;
+    epoch_og = epoch;
+
+    epochd = epoch+rand/4000;
     fprintf('Epoch diff = %s, noisy ->%10.10f, OG ->%10.10f\n', (epochToUTC(epochd)-epochToUTC(epoch)),epochd,epoch)
 
     f_doppler = paramsToDop(epochd,time);

@@ -1,5 +1,5 @@
 function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
-    R1, R2, snr, NAME, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(epoch_in,time)
+    R1, R2, snr, NAME, ID, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(epoch_in,time)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -14,11 +14,15 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
 % | (_| (_) | | | \__ \ || (_| | | | | ||  __/\__ \
 %  \___\___/|_| |_|___/\__\__,_|_| |_|\__\___||___/
 
-    ID = 25544; % NORAD ID de la ISS
-    NAME = 'ISS';
+    % NAME = 'ISS';
+    % ID = 25544; % NORAD ID de la ISS
+    % NAME = 'CSS';
+    % ID = 48274;
+    NAME = 'STARLINK33984';
+    ID = 47647;
 
-    RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
-    % RX = [40.6223011985758, -4.010124224894723, 930]; % Coords Villalba
+    % RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
+    RX = [40.6223011985758, -4.010124224894723, 930]; % Coords Villalba
 
     freq = 143.050e6;% frequency in hertz
     f = 1/298.26; % WGS72 Parameters
@@ -30,11 +34,13 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     eirp_tx = 1e6; % EIRP power TX [Watts]
     RCSb = 5; % bistatic RCS [meters^2]
 
-    Grx = 2.15; % Gain RX [dB]
+    Grx = 14; % Gain RX [dB]
     Lsys = 3; % System loses RX [dB]
-    Fs = 3; % Noise figure RX [dB]
+    Fs = 6; % Noise figure RX [dB]
     % Brx = 0.25e6;% BW RX [Hz]
-    Tint = 1; % Integration time [s]
+    SR = 5e6; % Sample rate
+    fft_size = 2^16;
+    Tint = fft_size/SR; % Integration time [s]
 
     % GRAVES coords
 
@@ -73,7 +79,7 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     tline = fgetl(fid);
     Cnum = tline(3:7);      			        % Catalog Number (NORAD)
     SC   = tline(8);					        % Security Classification
-    ID   = tline(10:17);			            % Identification Number
+    ID2   = tline(10:17);			            % Identification Number
     % year2 = str2double(tline(19:20));               % Year
     % doy  = str2double(tline(21:32));               % Day of year
     epoch = str2double(tline(19:32));              % Epoch
@@ -103,8 +109,9 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     else
         satdata.epoch = epoch_in;
     end
+
     satdata.norad_number = Cnum;
-    satdata.bulletin_number = ID;
+    satdata.bulletin_number = ID2;
     satdata.classification = SC; % almost always 'U'
     satdata.revolution_number = rNo;
     satdata.ephemeris_type = Etype;
