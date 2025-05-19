@@ -3,11 +3,11 @@ clear
 
 freq = 143.050e6;
 inst = datetime('now', 'TimeZone', 'Local'); %Time origin
-inst = datetime('13-May 00:30:22','InputFormat','dd-MMM HH:mm:ss',TimeZone='Local');
+inst = datetime('14-May 11:02:22','InputFormat','dd-MMM HH:mm:ss',TimeZone='Local');
 duracion = 30; % In minutes
 precision = 1 / 60; % Precision in minutes
 
-fitter = true;
+fitter = false;
 fitterType = 'real'; % real for real data or sim for generated noise
 
 propagateB4andafter = true; % False propaga hacia delante desde inst

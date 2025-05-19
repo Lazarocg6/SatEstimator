@@ -13,18 +13,61 @@ close all
 % | |___>  <| |_| |/ / (_| | || (_| |
 % \____/_/\_\\__|___/ \__,_|\__\__,_|
 
-load('detections130520250037.mat','detections_out','f_axis','t_axis')
+% STARLINK33984
+% load('detections130520250037.mat','detections_out','f_axis','t_axis')
+% x_range = 900:1100;
+% y_range = 2070:2300;
 
-x_range = 900:1100;
-y_range = 2070:2300;
+% % STARLINK33984
+% load('detections130520252001.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
 
-[fila,columna] = find(detections_out(y_range,x_range));
-x = f_axis(x_range);
-x = x(columna);
-y = t_axis(y_range);
-y = y(fila);
-y = datenum(y);
-xdata = datetime(y,'ConvertFrom','datenum','TimeZone','local');
+% % STARLINK5978
+% load('140520250018STARLINK5979detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 970:1200;
+% y_range = 150:600;
+
+% % STARLINK1092
+% load('140520250052STARLINK1092detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('140520250212STARLINK3824detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 400:1200;
+% y_range = 50:1200;
+
+% % STARLINK3824
+% load('140520250245STARLINK1833detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 600:1100;
+% y_range = 250:900;
+
+% % STARLINK3824
+% load('140520250318STARLINK32303detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('140520251018STARLINK33851detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 800:1200;
+% y_range = 1100:1900;
+
+% STARLINK3824
+load('140520251116STARLINK2030detecciones.mat','detections_out','f_axis','t_axis')
+x_range = 900:1050;
+y_range = 650:1200;
+
+if strcmp(fitterType,'real')
+
+    [fila,columna] = find(detections_out(y_range,x_range));
+    x = f_axis(x_range);
+    x = x(columna);
+    y = t_axis(y_range);
+    y = y(fila);
+    y = datenum(y);
+    xdata = datetime(y,'ConvertFrom','datenum','TimeZone','local');
+end
 
 % ______                             
 % | ___ \                            
@@ -47,12 +90,12 @@ DF = 170; % Decimation factor
 %Filter parameters
 elevMinTX = 10; % degrees
 elevMaxTX = 50;
-azMinTX = 90;
-azMaxTX = 270;
+azMinTX = 0;
+azMaxTX = 360;
 elevMinRX = 10; % degrees
 elevMaxRX = 50;
-azMinRX = 270;
-azMaxRX = 90;
+azMinRX = 0;
+azMaxRX = 360;
 
 [azRX,elevRX,slantRangeRX] = ecef2aer(recef(1,:)*10^3,recef(2,:)*10^3, ...
     recef(3,:)*10^3,latRX,lonRX,elRX,referenceEllipsoid('wgs72'));
@@ -75,8 +118,9 @@ if filter
         limAzRX = (azTX>azMinRX) & (azTX<azMaxRX);
     end
 
-    mask = ~(limElTX & limElRX & limAzTX & limAzRX);
- 
+    % mask = ~(limElTX & limElRX & limAzTX & limAzRX);
+    mask = ~(limElTX & limElRX);
+
 else
     mask = ones(1,length(elevRX));
 end
@@ -367,9 +411,13 @@ end
 plot(divDop2,DTtime,'-','Tag','Right','DisplayName',name);
 
 if strcmp(fitterType,'real')
-    scatter(ydata,xdata,'.')
-    plot(fitted,DTtime,'-','Tag','Right','DisplayName',name,'LineStyle',':');
-    legend('Original','Filtered','Received','Fitted')
+    scatter(x,xdata,'.')
+    if fitter == true
+        plot(fitted,DTtime,'-','Tag','Right','DisplayName',name,'LineStyle',':');
+        legend('Original','Filtered','Received','Fitted')
+    else
+        legend('Original','Filtered','Received')
+    end
 end
 
 hold off

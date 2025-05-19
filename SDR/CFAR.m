@@ -6,9 +6,10 @@ medidas_dir = "C:\Users\lazar\Desktop\ETSIT\MUIT\TFM\Medidas\";
 addpath(medidas_dir)
 
 % load(medidas_dir+"Procesadas/CSS_070520251050/070520251050IMP.mat")
-load(medidas_dir+"Procesadas/STARLINK_130520250037/130520250035STARLINK34058CREO.mat")
-% load(medidas_dir+"130520250035STARLINK33978CREO.mat")
+% load(medidas_dir+"Procesadas/STARLINK_130520250037/130520250035STARLINK33984CREO.mat")
+% load(medidas_dir+"130520251949STARLINK4MAYO.mat")
 % load("120520252045NOSE.mat")
+load(medidas_dir+"Procesadas\STARLINK32303_140520250302\140520250318.mat")
 
 % % Comentar si no son medidas antiguas -------------------------------------
 % 
@@ -79,14 +80,10 @@ detections = abs(data) > (k * noise_estimate);
 threshold = 3;
 
 cell = [16,16];
-guard = [0,0];
 
 kernel_size = cell + guard*2 + 1;
 cluster_kernel = ones(kernel_size);
 cut_idx = ceil(kernel_size / 2);
-
-cluster_kernel(cut_idx(1)-guard(1):cut_idx(1)+guard(1), ...
-               cut_idx(2)-guard(2):cut_idx(2)+guard(2)) = 0;
 
 % Apply 2D convolution
 convolution = conv2(double(detections), cluster_kernel, 'same');  % Use double
@@ -158,5 +155,9 @@ if prompt == 'y'
 
     save([char(datetime('now','Format','ddMMyyyyHHmm')), '.mat'] ...
         ,'IQ', 'BB_sample_rate','init_t','t');
+    save([char(datetime('now','Format','ddMMyyyyHHmm')), 'detecciones.mat'] ...
+        ,'f_axis','t_axis','detections_out')
 
 end
+
+% save('detections130520250037.mat','f_axis','t_axis','detections_out')
