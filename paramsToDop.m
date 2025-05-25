@@ -14,15 +14,16 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
 % | (_| (_) | | | \__ \ || (_| | | | | ||  __/\__ \
 %  \___\___/|_| |_|___/\__\__,_|_| |_|\__\___||___/
 
-    % NAME = 'ISS';
-    % ID = 25544; % NORAD ID de la ISS
+    NAME = 'ISS';
+    ID = 25544; % NORAD ID de la ISS
     % NAME = 'CSS';
-    % ID = 48274;
-    NAME = 'STARLINK33984';
-    ID = 47647;
+    ID = 48274;
+    % NAME = 'STARLINK33984';
+    % ID = 53713;
+    ID = 57413;
 
-    % RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
-    RX = [40.6223011985758, -4.010124224894723, 930]; % Coords Villalba
+    RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
+    % RX = [40.6223011985758, -4.010124224894723, 930]; % Coords Villalba
 
     freq = 143.050e6;% frequency in hertz
     f = 1/298.26; % WGS72 Parameters
@@ -34,13 +35,15 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     eirp_tx = 1e6; % EIRP power TX [Watts]
     RCSb = 5; % bistatic RCS [meters^2]
 
-    Grx = 14; % Gain RX [dB]
+    Grx = 2.15; % Gain RX [dB]
     Lsys = 3; % System loses RX [dB]
-    Fs = 6; % Noise figure RX [dB]
+    Fs = 0.4; % Noise figure RX [dB]
     % Brx = 0.25e6;% BW RX [Hz]
     SR = 5e6; % Sample rate
-    fft_size = 2^16;
-    Tint = fft_size/SR; % Integration time [s]
+    DF = 200; % Decimation Factor
+    BBSR = SR/DF; % Baseband SR
+    fft_size = 2^11;
+    Tint = fft_size/BBSR; % Integration time [s]
 
     % GRAVES coords
 

@@ -35,4 +35,5 @@ end
 
 release(rx);
 
-IQ = fftshift(flip(fft(raw_IQ'))');
+
+IQ = flip(fftshift(fft(raw_IQ')',2),2);

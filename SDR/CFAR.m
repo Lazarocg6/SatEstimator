@@ -9,8 +9,8 @@ addpath(medidas_dir)
 % load(medidas_dir+"Procesadas/STARLINK_130520250037/130520250035STARLINK33984CREO.mat")
 % load(medidas_dir+"130520251949STARLINK4MAYO.mat")
 % load("120520252045NOSE.mat")
-load(medidas_dir+"Procesadas\STARLINK32303_140520250302\140520250318.mat")
-
+% load(medidas_dir+"Procesadas\STARLINK32303_140520250302\140520250318.mat")
+% load("240520251658.mat")
 % % Comentar si no son medidas antiguas -------------------------------------
 % 
 % IQ = fftshift(flip(fft(IQ'))');
@@ -97,6 +97,7 @@ dynamicRange = [22 27]; % Sin lna dipolo
 dynamicRange = [31 40]; % Medidas antiguas
 dynamicRange = [31 40]; % Con lna dipolo
 dynamicRange = [29 33]; % Con lna dipolo 2
+dynamicRange = [30 40]; % Con lna y triple filtro dipolo
 
 figure(1)
 imagesc(f_axis,t_axis,10.*log10(abs(IQ_abs)));

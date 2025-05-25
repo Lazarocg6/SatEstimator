@@ -53,10 +53,60 @@ close all
 % x_range = 800:1200;
 % y_range = 1100:1900;
 
+% % STARLINK3824
+% load('140520251116STARLINK2030detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 900:1050;
+% y_range = 650:1200;
+
+% % STARLINK3824
+% load('220520251240STARLINK1582detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('220520251311STARLINK31963detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('220520251348STARLINK31204detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('220520251416STARLINK30173detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('220520251547STARLINK30232detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('220520251611STARLINK1021detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('220520251658STARLINK2284detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('220520251718STARLINK4671detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('250520251804STARLINK1693detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
 % STARLINK3824
-load('140520251116STARLINK2030detecciones.mat','detections_out','f_axis','t_axis')
-x_range = 900:1050;
-y_range = 650:1200;
+load('250520251838STARLINK30191detecciones.mat','detections_out','f_axis','t_axis')
+x_range = 990:1200;
+y_range = 1200:1740;
 
 if strcmp(fitterType,'real')
 
@@ -78,7 +128,7 @@ end
 
 % Para calcular el tiempo de integracion maximo
 fs = 5e6; % Sample rate
-DF = 170; % Decimation factor
+DF = 200; % Decimation factor
 
 %   ___      _____ _     ______ _ _ _            
 %  / _ \    |  ___| |    |  ___(_) | |           
@@ -90,10 +140,10 @@ DF = 170; % Decimation factor
 %Filter parameters
 elevMinTX = 10; % degrees
 elevMaxTX = 50;
-azMinTX = 0;
-azMaxTX = 360;
-elevMinRX = 10; % degrees
-elevMaxRX = 50;
+azMinTX = 90;
+azMaxTX = 270;
+elevMinRX = 0; % degrees
+elevMaxRX = 90;
 azMinRX = 0;
 azMaxRX = 360;
 
@@ -118,8 +168,8 @@ if filter
         limAzRX = (azTX>azMinRX) & (azTX<azMaxRX);
     end
 
-    % mask = ~(limElTX & limElRX & limAzTX & limAzRX);
-    mask = ~(limElTX & limElRX);
+    mask = ~(limElTX & limElRX & limAzTX & limAzRX);
+    % mask = ~(limElTX & limElRX);
 
 else
     mask = ones(1,length(elevRX));
@@ -251,15 +301,19 @@ ax = geoaxes(fig3);
 geobasemap(ax,'darkwater');
 
 if filter
-    traject = geoplot(ax, rlla(1,:), rlla(2,:),'DisplayName' ...
-            , name, 'Tag', 'trajectory','LineStyle',':');
+    % traject = geoplot(ax, rlla(1,:), rlla(2,:),'DisplayName' ...
+    %         , name, 'Tag', 'trajectory','LineStyle',':');
+    traject = geoplot(ax, rlla(1,:), rlla(2,:), 'Tag', 'trajectory' ...
+        ,'LineStyle',':', 'HandleVisibility', 'off');
     traject.UserData = [rlla(3,:);time];
 end
 
 hold(ax,'on')
 
-traject2 = geoplot(ax, rlla_t(1,:), rlla_t(2,:),'DisplayName' ...
-        , name, 'Tag', 'trajectory');
+% traject2 = geoplot(ax, rlla_t(1,:), rlla_t(2,:),'DisplayName' ...
+%         , name, 'Tag', 'trajectory');
+traject2 = geoplot(ax, rlla_t(1,:), rlla_t(2,:) ...
+    , 'Tag', 'trajectory', 'HandleVisibility', 'off');
 traject2.UserData = [rlla_t(3,:);time];
 % Plot TX and RX positions
 geoplot(ax,latTX, lonTX, 'xr', 'DisplayName', 'TX', 'Tag', 'TX');
@@ -275,7 +329,7 @@ curr.UserData = [rlla(3,index); time(index);index];
 hold(ax,'off')
 geolimits([35 50], [-14 14])
 
-% legend(ax, 'show', 'Location', 'southeast');
+legend(ax, 'show', 'Location', 'southeast');
 
 % Set up the data cursor mode with a custom function
 dcm = datacursormode(fig3);
@@ -320,6 +374,7 @@ azRXp(:,mask) = NaN;
 elRXp(:,mask) = NaN;
 
 yyaxis left
+ylim([0 360])
 hold on
 if filter
     plot(DTtime,(azRX(1,:)),'DisplayName',name,'LineStyle',':')
@@ -328,6 +383,7 @@ plot(DTtime,azRXp,'LineStyle','-')
 hold off
 ylabel('Azimuth [º]')
 yyaxis right
+ylim([-40 90])
 hold on
 if filter
     plot(DTtime,(elevRX(1,:)),'DisplayName',name,'LineStyle',':')
@@ -351,6 +407,7 @@ azTXp(:,mask) = NaN;
 elTXp(:,mask) = NaN;
 
 yyaxis left
+ylim([0 360])
 hold on
 if filter
     plot(DTtime,(azTX(1,:)),'DisplayName',name,'LineStyle',':')
@@ -359,6 +416,7 @@ plot(DTtime',azTXp,'LineStyle','-')
 hold off
 ylabel('Azimuth [º]')
 yyaxis right
+ylim([-40 90])
 hold on
 if filter
     plot(DTtime,(elevTX(1,:)),'DisplayName',name,'LineStyle',':')
@@ -367,11 +425,14 @@ plot(DTtime',elTXp,'LineStyle','-')
 hold off
 ylabel('Elevation [º]')
 
+
+
 title('Position relative to TX')
 xlabel('Time [min]')
 
 grid on
 set(fig9, 'Position', [leftX, topY, 560, 420]);
+
 
 % Figure 7---------------------------------------------------------------------------------
 fig7 = figure(7);
@@ -426,8 +487,7 @@ xlabel('Doppler Frequency [Hz]')
 ylabel('Time')
 ylim([inst-minutes(5) inst+minutes(5)])
 ax3 = gca;
-set(ax3, 'YDir','reverse')
-xlabel('Frequency [MHz]') 
+set(ax3, 'YDir','reverse') 
     
 set(fig7, 'Position', [centerX-280, topY, 2*560, 420]);
 
@@ -485,6 +545,8 @@ if filter
 end
 plot(DTtime(2:end), diff(divDop),'-');
 hold off
+
+ax3 = gca;
 
 grid on;
 title('Doppler derivative')
@@ -549,10 +611,21 @@ ylabel('n (FFT size = 2^n)')
 set(fig10, 'Position', [centerX-520, botY, 3*520, 420]);
 
 set(ax2, 'XLim', get(ax1, 'XLim'));
-linkaxes([ax1 ax2], 'x')
+linkaxes([ax3 ax1 ax2], 'x')
 
-% % Figure 12---------------------------------------------------------------------------------
+% Figure 12---------------------------------------------------------------------------------
 % figure(12)
 % plot(DTtime,bistaticVelocity)
+
+%Figure 13---------------------------------------------------------------------------------
+figure(13)
+plot(DTtime,R1./1000)
+hold on
+plot(DTtime,R2./1000)
+hold off
+grid on
+title('Bistatic Ranges')
+xlabel('Time')
+ylabel('Ditance [Km]')
 
 end
