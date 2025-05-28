@@ -3,6 +3,7 @@ function updateEOP(lastUpdate)
 %   Detailed explanation goes here
 
     filenameEOP = 'EOP-All.txt';
+    options = weboptions('Timeout', 30);
 
     if isfile(filenameEOP)  % Check if the file exists
         fid = fopen(filenameEOP, 'r');  % Open for reading only
@@ -28,7 +29,7 @@ function updateEOP(lastUpdate)
         fechaActual = datetime("now");
     
         if hours(fechaActual-fechaUpdate) > lastUpdate
-            websave(filenameEOP,'https://celestrak.org/SpaceData/EOP-All.txt');
+            websave(filenameEOP,'https://celestrak.org/SpaceData/EOP-All.txt',options);
             disp('EOP llamado')
         end
     

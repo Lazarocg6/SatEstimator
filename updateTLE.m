@@ -3,6 +3,7 @@ function updateTLE(lastUpdate,ID)
 %   Detailed explanation goes here
 
     folderName = 'TLEs';
+    options = weboptions('Timeout', 30);
 
     % Check if the folder exists, if not, create it
     if ~exist(folderName, 'dir')
@@ -23,7 +24,7 @@ function updateTLE(lastUpdate,ID)
             fid = fopen(fullPath,'wt');
             fprintf(fid,'%s\n',datetime("now"));
             url = ['https://celestrak.org/NORAD/elements/gp.php?CATNR=',num2str(ID),'&FORMAT=2le'];
-            data = webread(url);  % Read the content from the URL
+            data = webread(url,options);  % Read the content from the URL
             lines = splitlines(data);  % Split the content into lines
             fprintf(fid,'%s\n',lines{1});
             fprintf(fid,'%s\n',lines{2});
@@ -35,7 +36,7 @@ function updateTLE(lastUpdate,ID)
         fid = fopen(fullPath,'wt');
         fprintf(fid,'%s\n',datetime("now"));
         url = ['https://celestrak.org/NORAD/elements/gp.php?CATNR=',num2str(ID),'&FORMAT=2le'];
-        data = webread(url);  % Read the content from the URL
+        data = webread(url,options);  % Read the content from the URL
         lines = splitlines(data);  % Split the content into lines
         fprintf(fid,'%s\n',lines{1});
         fprintf(fid,'%s\n',lines{2});

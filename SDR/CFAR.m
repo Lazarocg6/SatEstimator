@@ -5,15 +5,19 @@ medidas_dir = "C:\Users\lazar\Desktop\ETSIT\MUIT\TFM\Medidas\";
 
 addpath(medidas_dir)
 
-% load(medidas_dir+"Procesadas/CSS_070520251050/070520251050IMP.mat")
+% load(medidas_dir+"Procesadas/STARLINK4671_220520251715/220520251718.mat")
 % load(medidas_dir+"Procesadas/STARLINK_130520250037/130520250035STARLINK33984CREO.mat")
 % load(medidas_dir+"130520251949STARLINK4MAYO.mat")
 % load("120520252045NOSE.mat")
 % load(medidas_dir+"Procesadas\STARLINK32303_140520250302\140520250318.mat")
-% load("240520251658.mat")
+% load("130520252026STARLINK4MAYO_CREO.mat")
+% load(medidas_dir+"Procesadas\STARLINK30191_250520251900\250520251838.mat")
+
 % % Comentar si no son medidas antiguas -------------------------------------
 % 
-% IQ = fftshift(flip(fft(IQ'))');
+
+% IQ = flip(fftshift(fft(IQ')',2),2);
+% IQ = fftshift(IQ,2);
 % BB_sample_rate = 5e6/80;
 % NB = size(IQ,1);
 % NFB = 1;
@@ -97,7 +101,7 @@ dynamicRange = [22 27]; % Sin lna dipolo
 dynamicRange = [31 40]; % Medidas antiguas
 dynamicRange = [31 40]; % Con lna dipolo
 dynamicRange = [29 33]; % Con lna dipolo 2
-dynamicRange = [30 40]; % Con lna y triple filtro dipolo
+% dynamicRange = [30 40]; % Con lna y doble filtro yagi
 
 figure(1)
 imagesc(f_axis,t_axis,10.*log10(abs(IQ_abs)));

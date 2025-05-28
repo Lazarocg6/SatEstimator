@@ -58,6 +58,11 @@ close all
 % x_range = 900:1050;
 % y_range = 650:1200;
 
+% STARLINK3824
+load('220520251718STARLINK4671detecciones.mat','detections_out','f_axis','t_axis')
+x_range = 1000:1050;
+y_range = 2900:3300;
+
 % % STARLINK3824
 % load('220520251240STARLINK1582detecciones.mat','detections_out','f_axis','t_axis')
 % x_range = 1:length(f_axis);
@@ -103,10 +108,18 @@ close all
 % x_range = 1:length(f_axis);
 % y_range = 1:length(t_axis);
 
-% STARLINK3824
-load('250520251838STARLINK30191detecciones.mat','detections_out','f_axis','t_axis')
-x_range = 990:1200;
-y_range = 1200:1740;
+% % STARLINK3824
+% load('250520251838STARLINK30191detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1030:1200;
+% y_range = 1200:1740;
+
+% % STARLINK3824
+% load('070520251045CSSdetecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 7000:8000;
+% y_range = 380:450;
+% % x_range = 1:length(f_axis);
+% % y_range = 1:length(t_axis);
+
 
 if strcmp(fitterType,'real')
 
@@ -187,10 +200,14 @@ end
 if fitter
     if strcmp(fitterType,'sim')
         [ydata, epochd,epoch_og] = noiseGen(time,ID);
-        x0 = [epoch_og];
-        res = lsqcurvefit(@paramsToDop,x0,time,ydata);
-        fprintf('Epoch diff = %s, noisy ->%10.10f, fitted ->%10.10f\n', (epochToUTC(epochd)-epochToUTC(res)),epochd,res)
-        fitted = paramsToDop(res,time);
+        x0 = [epoch_og,0];
+        fun = @(optimize,time) paramsToDop(optimize(1),time)+optimize(2);
+        res = lsqcurvefit(fun,x0,time,ydata);
+        t = (epochToUTC(epochd)-epochToUTC(res(1)));
+        t.Format = 'hh:mm:ss.SSS';
+        fprintf('Epoch diff = %s, noisy ->%10.10f, fitted ->%10.10f\n', t,epochd,res(1))
+        fprintf('Frequency correction -> %5.4fHz\n',res(2))
+        fitted = paramsToDop(res(1),time)+res(2);
 
     elseif strcmp(fitterType,'real')
         fid = fopen([fullfile('TLEs',int2str(ID)),'.txt'],'rt');
@@ -198,10 +215,15 @@ if fitter
         tline = fgetl(fid);
         epoch_og = str2double(tline(19:32));
         ydata = x;
-        x0 = [epoch_og];
-        res = lsqcurvefit(@paramsToDop,x0,y,ydata);
-        fprintf('Epoch diff = %s, original ->%10.10f, fitted ->%10.10f\n', (epochToUTC(epoch_og)-epochToUTC(res)),epoch_og,res)
-        fitted = paramsToDop(res,time);
+        x0 = [epoch_og,0];
+        fun = @(optimize,time) paramsToDop(optimize(1),time)+optimize(2);
+        % res = lsqcurvefit(@paramsToDop,x0,y,ydata);
+        res = lsqcurvefit(fun,x0,y,ydata);
+        t = (epochToUTC(epoch_og)-epochToUTC(res(1)));
+        t.Format = 'hh:mm:ss.SSS';
+        fprintf('Epoch diff = %s, original ->%10.10f, fitted ->%10.10f\n', t,epoch_og,res(1))
+        fprintf('Frequency correction -> %5.4fHz\n',res(2))
+        fitted = paramsToDop(res(1),time)+res(2);
     end
     
 end
