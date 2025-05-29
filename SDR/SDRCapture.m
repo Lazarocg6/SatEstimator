@@ -5,14 +5,14 @@ clear rx
 info = findsdru;
 
 MCR = 5e6; % Master clock rate
-fft_size = 2^12;
+fft_size = 2^11;
 DF = 200; % Decimation factor
 BB_sample_rate = MCR/DF;
 gain = 31; % dB
 
-NFB = 500; % Number of frames in burst
+NFB = 6000; % Number of frames in burst
 
-f = 1091.05e6;
+f = 143.05e6;
 % f = 129.925e6;
 LO_offset = 500e3;
 

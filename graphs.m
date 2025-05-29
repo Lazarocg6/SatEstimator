@@ -1,10 +1,16 @@
-function graphs(time,DTtime,fitter,fitterType,inst,filter,freq)
+function graphs(time,DTtime,fitter,fitterType,inst,filter,multistat,bistat,RX1,RX2)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 close all
 
+if multistat
+    [f_dopplerMult, recefMult, vecefMult, rllaMult, bistaticRangeMult, bistaticVelocityMult, ...
+        R1Mult, R2Mult, snrMult, nameMult, IDMult, latTXMult, latRXMult, lonTXMult, lonRXMult, elTXMult, elRXMult] = paramsToDop(NaN,time,RX1,RX2); 
+    f_dopplerMult = [f_dopplerMult(1:end/2) NaN f_dopplerMult((end/2)+1:end)];
+end
+
 [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
-    R1, R2, snr, name, ID, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(NaN,time);
+    R1, R2, snr, name, ID, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(NaN,time,RX1);
 
 %  _____     _  ______      _        
 % |  ___|   | | |  _  \    | |       
@@ -58,10 +64,10 @@ close all
 % x_range = 900:1050;
 % y_range = 650:1200;
 
-% STARLINK3824
-load('220520251718STARLINK4671detecciones.mat','detections_out','f_axis','t_axis')
-x_range = 1000:1050;
-y_range = 2900:3300;
+% % STARLINK3824
+% load('220520251718STARLINK4671detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1000:1050;
+% y_range = 2900:3300;
 
 % % STARLINK3824
 % load('220520251240STARLINK1582detecciones.mat','detections_out','f_axis','t_axis')
@@ -120,6 +126,11 @@ y_range = 2900:3300;
 % % x_range = 1:length(f_axis);
 % % y_range = 1:length(t_axis);
 
+% STARLINK3824
+load('280520251304STARLINK4650detecciones.mat','detections_out','f_axis','t_axis')
+x_range = 1:length(f_axis);
+y_range = 1:length(t_axis);
+
 
 if strcmp(fitterType,'real')
 
@@ -130,6 +141,71 @@ if strcmp(fitterType,'real')
     y = y(fila);
     y = datenum(y);
     xdata = datetime(y,'ConvertFrom','datenum','TimeZone','local');
+
+end
+
+%  _                    _   _____                                 
+% | |                  | | /  ___|                                
+% | |     ___  __ _ ___| |_\ `--.  __ _ _   _  __ _ _ __ ___  ___ 
+% | |    / _ \/ _` / __| __|`--. \/ _` | | | |/ _` | '__/ _ \/ __|
+% | |___|  __/ (_| \__ \ |_/\__/ / (_| | |_| | (_| | | |  __/\__ \
+% \_____/\___|\__,_|___/\__\____/ \__, |\__,_|\__,_|_|  \___||___/
+%                                    | |                          
+%                                    |_|
+
+if fitter
+    if strcmp(fitterType,'sim')
+
+        seed = now;
+
+        if multistat
+            [ydataMult, epochdMult,epoch_ogMult,f_dev] = noiseGen(time,ID,RX1,seed,RX2);
+            x0Mult = [epoch_ogMult,0];
+            funMult = @(optimize,time) paramsToDop(optimize(1),time,RX1,RX2)+optimize(2);
+            resMult = lsqcurvefit(funMult,x0Mult,time,ydataMult);
+            tMult = (epochToUTC(epochdMult)-epochToUTC(resMult(1)));
+            tMult.Format = 'hh:mm:ss.SSS';
+            fprintf('-------------------------Mult Data-------------------------\n')
+            fprintf('Epoch diff = %s, noisy ->%10.10f, fitted ->%10.10f\n', tMult,epochdMult,resMult(1))
+            fprintf('Frequency correction diff -> %5.4fHz, Frequency correction (fitted) -> %5.4fHz\n',resMult(2)-f_dev,resMult(2))
+            fprintf('-----------------------------------------------------------\n')
+            fittedMult = paramsToDop(resMult(1),time,RX1,RX2)+resMult(2);
+            fittedMult = [fittedMult(1:end/2) NaN fittedMult((end/2)+1:end)];
+            ydataMult_nan = [ydataMult(1:end/2) NaN ydataMult((end/2)+1:end)];
+        end
+        if bistat
+
+            [ydata, epochd,epoch_og,f_dev] = noiseGen(time,ID,RX1,seed);         
+            x0 = [epoch_og,0];
+            fun = @(optimize,time) paramsToDop(optimize(1),time,RX1)+optimize(2);
+            res = lsqcurvefit(fun,x0,time,ydata);
+            t = (epochToUTC(epochd)-epochToUTC(res(1)));
+            t.Format = 'hh:mm:ss.SSS';
+            fprintf('-------------------------Bist Data-------------------------\n')
+            fprintf('Epoch diff = %s, noisy ->%10.10f, fitted ->%10.10f\n', t,epochd,res(1))
+            fprintf('Frequency correction diff -> %5.4fHz, Frequency correction (fitted) -> %5.4fHz\n',res(2)-f_dev,res(2))
+            fprintf('-----------------------------------------------------------\n')
+            fitted = paramsToDop(res(1),time,RX1)+res(2);
+
+        end
+
+    elseif strcmp(fitterType,'real')
+        fid = fopen([fullfile('TLEs',int2str(ID)),'.txt'],'rt');
+        tline = fgetl(fid);
+        tline = fgetl(fid);
+        epoch_og = str2double(tline(19:32));
+        ydata = x;
+        x0 = [epoch_og,0];
+        fun = @(optimize,time) paramsToDop(optimize(1),time,RX1)+optimize(2);
+        % res = lsqcurvefit(@paramsToDop,x0,y,ydata);
+        res = lsqcurvefit(fun,x0,y,ydata);
+        t = (epochToUTC(epoch_og)-epochToUTC(res(1)));
+        t.Format = 'hh:mm:ss.SSS';
+        fprintf('Epoch diff = %s, original ->%10.10f, fitted ->%10.10f\n', t,epoch_og,res(1))
+        fprintf('Frequency correction -> %5.4fHz\n',res(2))
+        fitted = paramsToDop(res(1),time,RX1)+res(2);
+    end
+
 end
 
 % ______                             
@@ -142,6 +218,17 @@ end
 % Para calcular el tiempo de integracion maximo
 fs = 5e6; % Sample rate
 DF = 200; % Decimation factor
+
+if multistat
+    timeMult = [time NaN time];
+    salto = datetime(NaT, 'TimeZone', DTtime.TimeZone);
+    DTtimeMult = [DTtime salto DTtime];
+    recefMult = [recef nan(3,1) recef];
+    vecefMult = [vecef nan(3,1) vecef];
+    rllaMult = [rlla nan(3,1) rlla];
+    % R1 = [R1(1:end/2) NaN R1((end/1)+1:end)];
+    % R2 = [R2(1:end/2) NaN R2((end/1)+1:end)];
+end
 
 %   ___      _____ _     ______ _ _ _            
 %  / _ \    |  ___| |    |  ___(_) | |           
@@ -186,46 +273,6 @@ if filter
 
 else
     mask = ones(1,length(elevRX));
-end
-
-%  _                    _   _____                                 
-% | |                  | | /  ___|                                
-% | |     ___  __ _ ___| |_\ `--.  __ _ _   _  __ _ _ __ ___  ___ 
-% | |    / _ \/ _` / __| __|`--. \/ _` | | | |/ _` | '__/ _ \/ __|
-% | |___|  __/ (_| \__ \ |_/\__/ / (_| | |_| | (_| | | |  __/\__ \
-% \_____/\___|\__,_|___/\__\____/ \__, |\__,_|\__,_|_|  \___||___/
-%                                    | |                          
-%                                    |_|
-
-if fitter
-    if strcmp(fitterType,'sim')
-        [ydata, epochd,epoch_og] = noiseGen(time,ID);
-        x0 = [epoch_og,0];
-        fun = @(optimize,time) paramsToDop(optimize(1),time)+optimize(2);
-        res = lsqcurvefit(fun,x0,time,ydata);
-        t = (epochToUTC(epochd)-epochToUTC(res(1)));
-        t.Format = 'hh:mm:ss.SSS';
-        fprintf('Epoch diff = %s, noisy ->%10.10f, fitted ->%10.10f\n', t,epochd,res(1))
-        fprintf('Frequency correction -> %5.4fHz\n',res(2))
-        fitted = paramsToDop(res(1),time)+res(2);
-
-    elseif strcmp(fitterType,'real')
-        fid = fopen([fullfile('TLEs',int2str(ID)),'.txt'],'rt');
-        tline = fgetl(fid);
-        tline = fgetl(fid);
-        epoch_og = str2double(tline(19:32));
-        ydata = x;
-        x0 = [epoch_og,0];
-        fun = @(optimize,time) paramsToDop(optimize(1),time)+optimize(2);
-        % res = lsqcurvefit(@paramsToDop,x0,y,ydata);
-        res = lsqcurvefit(fun,x0,y,ydata);
-        t = (epochToUTC(epoch_og)-epochToUTC(res(1)));
-        t.Format = 'hh:mm:ss.SSS';
-        fprintf('Epoch diff = %s, original ->%10.10f, fitted ->%10.10f\n', t,epoch_og,res(1))
-        fprintf('Frequency correction -> %5.4fHz\n',res(2))
-        fitted = paramsToDop(res(1),time)+res(2);
-    end
-    
 end
 
 
@@ -339,7 +386,12 @@ traject2 = geoplot(ax, rlla_t(1,:), rlla_t(2,:) ...
 traject2.UserData = [rlla_t(3,:);time];
 % Plot TX and RX positions
 geoplot(ax,latTX, lonTX, 'xr', 'DisplayName', 'TX', 'Tag', 'TX');
-geoplot(ax,latRX, lonRX, '^r', 'DisplayName', 'RX', 'Tag', 'RX');
+if multistat
+   geoplot(ax,RX1(1), RX1(2), '^r', 'DisplayName', 'RX', 'Tag', 'RX1');
+   geoplot(ax,RX2(1), RX2(2), 'dr', 'DisplayName', 'RX', 'Tag', 'RX2'); 
+else
+   geoplot(ax,latRX, lonRX, '^r', 'DisplayName', 'RX', 'Tag', 'RX');
+end
 
 % Plot current satellite positions
 index = find(time == datenum(inst));
@@ -533,107 +585,115 @@ set(fig11, 'Position', [centerX, botY, 560, 420]);
 % ------------------------------------------------------------------------------------------
 if fitter
     if strcmp(fitterType,'sim')
-        figfit = figure;
-        plot(DTtime, ydata)
-        hold on
-        plot(DTtime,fitted)
-        plot(DTtime,f_doppler)
-        hold off
-        grid on
-        legend('Noisy','Fitted','Original')
-        set(figfit, 'Position', [leftX, topY, 560, 420]);
-    % elseif strcmp(fitterType,'real')
-    %     figfit = figure;
-    %     scatter(xdata, ydata,'.')
-    %     hold on
-    %     plot(DTtime,fitted)
-    %     plot(DTtime,f_doppler)
-    %     hold off
-    %     grid on
-    %     legend('Noisy','Fitted','Original')
-    %     set(figfit, 'Position', [leftX, topY, 560, 420]);
+        if multistat
+            MultiFigfit = figure;
+            plot(DTtimeMult, ydataMult_nan)
+            hold on
+            plot(DTtimeMult,fittedMult)
+            plot(DTtimeMult,f_dopplerMult)
+            hold off
+            grid on
+            legend('Noisy','Fitted','Original')
+            set(MultiFigfit, 'Position', [leftX, topY, 560, 420]);
+            title('Multistatic Scenario')
+        end
+        if bistat
+
+            BistFigfit = figure;
+            plot(DTtime, ydata)
+            hold on
+            plot(DTtime,fitted)
+            plot(DTtime,f_doppler)
+            hold off
+            grid on
+            legend('Noisy','Fitted','Original')
+            set(BistFigfit, 'Position', [rightX, topY, 560, 420]);
+            title('Bistatic Scenario')
+        end
     end
 
 end
 
-% Figure 10---------------------------------------------------------------------------------
-fig10 = figure(10);
-
-subplot(1,3,1)
-
-hold on
-if filter
-    plot(DTtime(2:end), diff(f_doppler),'-','Tag','Left','DisplayName',name,'LineStyle',':');
+if ~multistat
+    % Figure 10---------------------------------------------------------------------------------
+    fig10 = figure(10);
+    
+    subplot(1,3,1)
+    
+    hold on
+    if filter
+        plot(DTtime(2:end), diff(f_doppler),'-','Tag','Left','DisplayName',name,'LineStyle',':');
+    end
+    plot(DTtime(2:end), diff(divDop),'-');
+    hold off
+    
+    ax3 = gca;
+    
+    grid on;
+    title('Doppler derivative')
+    xlabel('Time')
+    ylabel('Doppler frequency derivative')
+    
+    subplot(1,3,2)
+    
+    ct = 1e3;
+    
+    tint = @(var) sqrt(1./abs(diff(var)));
+    
+    hold on
+    if filter
+        plot(DTtime(2:end), tint(f_doppler).*ct,'-','Tag','Left','DisplayName',name,'LineStyle',':');
+    end
+    
+    plot(DTtime(2:end), tint(divDop)*ct,'-');
+    tintmin_i = find(tint(f_doppler) == min(tint(f_doppler)));
+    tint_fdop = tint(f_doppler);
+    plot(DTtime(tintmin_i), tint_fdop(tintmin_i).*ct,'ok');
+    ax1 = gca;
+    
+    lims = [tint_fdop(tintmin_i)*0.2*ct tint_fdop(tintmin_i)*5*ct];
+    ylim(lims);
+    
+    hold off
+    
+    grid on;
+    title('Max integration time')
+    xlabel('Time')
+    ylabel('Integration time [ms]')
+    
+    subplot(1,3,3)
+    
+    BB_FS = fs/DF;
+    
+    fft_size = @(tau) floor(log2(tau.*BB_FS));
+    
+    hold on
+    if filter
+        plot(DTtime(2:end),fft_size(tint(f_doppler)),'LineStyle',':')
+    end
+    
+    plot(DTtime(2:end),fft_size(tint(divDop)))
+    
+    fft_size_fdop = fft_size(tint(f_doppler));
+    
+    plot(DTtime(tintmin_i), fft_size_fdop(tintmin_i),'ok');
+    ax2 = gca;
+    
+    hold off
+    try
+        ylim(fft_size(lims/ct))
+    catch
+    end
+    grid on;
+    title(sprintf('FFT Size (F_s = %1.2e Hz & DF = %i)',fs,DF))
+    xlabel('Time')
+    ylabel('n (FFT size = 2^n)')
+    
+    set(fig10, 'Position', [centerX-520, botY, 3*520, 420]);
+    
+    set(ax2, 'XLim', get(ax1, 'XLim'));
+    linkaxes([ax3 ax1 ax2], 'x')
 end
-plot(DTtime(2:end), diff(divDop),'-');
-hold off
-
-ax3 = gca;
-
-grid on;
-title('Doppler derivative')
-xlabel('Time')
-ylabel('Doppler frequency derivative')
-
-subplot(1,3,2)
-
-ct = 1e3;
-
-tint = @(var) sqrt(1./abs(diff(var)));
-
-hold on
-if filter
-    plot(DTtime(2:end), tint(f_doppler).*ct,'-','Tag','Left','DisplayName',name,'LineStyle',':');
-end
-
-plot(DTtime(2:end), tint(divDop)*ct,'-');
-tintmin_i = find(tint(f_doppler) == min(tint(f_doppler)));
-tint_fdop = tint(f_doppler);
-plot(DTtime(tintmin_i), tint_fdop(tintmin_i).*ct,'ok');
-ax1 = gca;
-
-lims = [tint_fdop(tintmin_i)*0.2*ct tint_fdop(tintmin_i)*5*ct];
-ylim(lims);
-
-hold off
-
-grid on;
-title('Max integration time')
-xlabel('Time')
-ylabel('Integration time [ms]')
-
-subplot(1,3,3)
-
-BB_FS = fs/DF;
-
-fft_size = @(tau) floor(log2(tau.*BB_FS));
-
-hold on
-if filter
-    plot(DTtime(2:end),fft_size(tint(f_doppler)),'LineStyle',':')
-end
-
-plot(DTtime(2:end),fft_size(tint(divDop)))
-
-fft_size_fdop = fft_size(tint(f_doppler));
-
-plot(DTtime(tintmin_i), fft_size_fdop(tintmin_i),'ok');
-ax2 = gca;
-
-hold off
-try
-    ylim(fft_size(lims/ct))
-catch
-end
-grid on;
-title(sprintf('FFT Size (F_s = %1.2e Hz & DF = %i)',fs,DF))
-xlabel('Time')
-ylabel('n (FFT size = 2^n)')
-
-set(fig10, 'Position', [centerX-520, botY, 3*520, 420]);
-
-set(ax2, 'XLim', get(ax1, 'XLim'));
-linkaxes([ax3 ax1 ax2], 'x')
 
 % Figure 12---------------------------------------------------------------------------------
 % figure(12)

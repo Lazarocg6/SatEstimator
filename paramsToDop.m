@@ -1,7 +1,7 @@
 function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
-    R1, R2, snr, NAME, ID, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(epoch_in,time)
+    R1, R2, snr, NAME, ID, latTX, latRX, lonTX, lonRX, elTX, elRX] = paramsToDop(epoch_in,time,RX,varargin)
 %UNTITLED Summary of this function goes here
-%   Detailed explanation goes here
+%   varargin{1} -> RX2
 
     addpath('SGP4_Vectorized')
     format long g
@@ -17,12 +17,12 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     NAME = 'ISS';
     ID = 25544; % NORAD ID de la ISS
     % NAME = 'CSS';
-    ID = 48274;
+    % ID = 48274;
     % NAME = 'STARLINK33984';
     % ID = 53713;
-    ID = 57930;
+    % ID = 57431;
 
-    RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
+    % RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
     % RX = [40.6223011985758, -4.010124224894723, 930]; % Coords Villalba
 
     freq = 143.050e6;% frequency in hertz
@@ -64,6 +64,7 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     MINUTES_PER_DAY = 1440;
     MINUTES_PER_DAY_SQUARED = (MINUTES_PER_DAY * MINUTES_PER_DAY);
     MINUTES_PER_DAY_CUBED = (MINUTES_PER_DAY * MINUTES_PER_DAY_SQUARED);
+
 
 %  _____ _      _____  ______  ___ _____ ___  
 % |_   _| |    |  ___| |  _  \/ _ \_   _/ _ \ 
@@ -223,6 +224,17 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
 
         [bistaticRange, bistaticVelocity, R1, R2, llaDIST, ecefDIST] = bistaticParams(latTX, ...
             lonTX, elTX, latRX, lonRX, elRX, recef * 1000, vecef * 1000, f, Re);
+
+        if length(varargin)>= 1
+            RX2 = varargin{1};
+            [~, bistaticVelocity2, R1_2, R2_2, ~, ~] = bistaticParams(latTX, ...
+                lonTX, elTX, RX2(1), RX2(2), RX2(3), recef * 1000, vecef * 1000, f, Re);
+
+            bistaticVelocity = [bistaticVelocity bistaticVelocity2];
+            R1 = [R1 NaN R1_2];
+            R2 = [R2 NaN R2_2];
+        end
+
 
 % ______                  _           
 % |  _  \                | |          
