@@ -20,7 +20,7 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
     % ID = 48274;
     % NAME = 'STARLINK33984';
     % ID = 53713;
-    % ID = 57431;
+    ID = 59513;
 
     % RX = [40.45206046037957, -3.726407299669201, 670]; % Coords ETSIT
     % RX = [40.6223011985758, -4.010124224894723, 930]; % Coords Villalba
@@ -73,61 +73,67 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
 %   | | | |____| |___  | |/ /| | | || || | | |
 %   \_/ \_____/\____/  |___/ \_| |_/\_/\_| |_/
 
-    updateEOP(36); % Update EOP every 36 hours
-    updateTLE(6, ID); % Update TLE every 6 hours
-    
-    fid = fopen([fullfile('TLEs',int2str(ID)),'.txt'],'rt');
-    tline = fgetl(fid);
+    if length(varargin)<2 | (length(varargin)>=2 & isempty(varargin{2}))
 
-    % read first line
-    tline = fgetl(fid);
-    Cnum = tline(3:7);      			        % Catalog Number (NORAD)
-    SC   = tline(8);					        % Security Classification
-    ID2   = tline(10:17);			            % Identification Number
-    % year2 = str2double(tline(19:20));               % Year
-    % doy  = str2double(tline(21:32));               % Day of year
-    epoch = str2double(tline(19:32));              % Epoch
-    TD1   = str2double(tline(34:43));              % first time derivative
-    TD2   = str2double(tline(45:50));              % 2nd Time Derivative
-    ExTD2 = str2double(tline(51:52));              % Exponent of 2nd Time Derivative
-    BStar = str2double(tline(54:59));              % Bstar/drag Term
-    ExBStar = str2double(tline(60:61));            % Exponent of Bstar/drag Term
-    BStar = BStar*1e-5*10^ExBStar;
-    Etype = tline(63);                          % Ephemeris Type
-    Enum  = str2double(tline(65:end));             % Element Number
+        updateEOP(36); % Update EOP every 36 hours
+        updateTLE(6, ID); % Update TLE every 6 hours
+        
+        fid = fopen([fullfile('TLEs',int2str(ID)),'.txt'],'rt');
+        tline = fgetl(fid);
     
-    % read second line
-    tline = fgetl(fid);
-    i = str2double(tline(9:16));                   % Orbit Inclination (degrees)
-    raan = str2double(tline(18:25));               % Right Ascension of Ascending Node (degrees)
-    e = str2double(strcat('0.',tline(27:33)));     % Eccentricity
-    omega = str2double(tline(35:42));              % Argument of Perigee (degrees)
-    M = str2double(tline(44:51));                  % Mean Anomaly (degrees)
-    no = str2double(tline(53:63));                 % Mean Motion
-    a = ( ge/(no*2*pi/86400)^2 )^(1/3);         % semi major axis (km)
-    rNo = str2double(tline(65:end));               % Revolution Number at Epoch
+        % read first line
+        tline = fgetl(fid);
+        Cnum = tline(3:7);      			        % Catalog Number (NORAD)
+        SC   = tline(8);					        % Security Classification
+        ID2   = tline(10:17);			            % Identification Number
+        % year2 = str2double(tline(19:20));               % Year
+        % doy  = str2double(tline(21:32));               % Day of year
+        epoch = str2double(tline(19:32));              % Epoch
+        TD1   = str2double(tline(34:43));              % first time derivative
+        TD2   = str2double(tline(45:50));              % 2nd Time Derivative
+        ExTD2 = str2double(tline(51:52));              % Exponent of 2nd Time Derivative
+        BStar = str2double(tline(54:59));              % Bstar/drag Term
+        ExBStar = str2double(tline(60:61));            % Exponent of Bstar/drag Term
+        BStar = BStar*1e-5*10^ExBStar;
+        Etype = tline(63);                          % Ephemeris Type
+        Enum  = str2double(tline(65:end));             % Element Number
+        
+        % read second line
+        tline = fgetl(fid);
+        i = str2double(tline(9:16));                   % Orbit Inclination (degrees)
+        raan = str2double(tline(18:25));               % Right Ascension of Ascending Node (degrees)
+        e = str2double(strcat('0.',tline(27:33)));     % Eccentricity
+        omega = str2double(tline(35:42));              % Argument of Perigee (degrees)
+        M = str2double(tline(44:51));                  % Mean Anomaly (degrees)
+        no = str2double(tline(53:63));                 % Mean Motion
+        a = ( ge/(no*2*pi/86400)^2 )^(1/3);         % semi major axis (km)
+        rNo = str2double(tline(65:end));               % Revolution Number at Epoch
+        
+        fclose(fid);
     
-    fclose(fid);
+        satdata.norad_number = Cnum;
+        satdata.bulletin_number = ID2;
+        satdata.classification = SC; % almost always 'U'
+        satdata.revolution_number = rNo;
+        satdata.ephemeris_type = Etype;
+        satdata.xmo = M * (pi/180);
+        satdata.xnodeo = raan * (pi/180);
+        satdata.omegao = omega * (pi/180);
+        satdata.xincl = i * (pi/180);
+        satdata.eo = e;
+        satdata.xno = no * TWOPI / MINUTES_PER_DAY;
+        satdata.xndt2o = TD1 * TWOPI / MINUTES_PER_DAY_SQUARED;
+        satdata.xndd6o = TD2 * 10^ExTD2 * TWOPI / MINUTES_PER_DAY_CUBED;
+        satdata.bstar = BStar;
+    else 
+        satdata = varargin{2};
+    end
+
     if isnan(epoch_in)
         satdata.epoch = epoch;
     else
         satdata.epoch = epoch_in;
     end
-
-    satdata.norad_number = Cnum;
-    satdata.bulletin_number = ID2;
-    satdata.classification = SC; % almost always 'U'
-    satdata.revolution_number = rNo;
-    satdata.ephemeris_type = Etype;
-    satdata.xmo = M * (pi/180);
-    satdata.xnodeo = raan * (pi/180);
-    satdata.omegao = omega * (pi/180);
-    satdata.xincl = i * (pi/180);
-    satdata.eo = e;
-    satdata.xno = no * TWOPI / MINUTES_PER_DAY;
-    satdata.xndt2o = TD1 * TWOPI / MINUTES_PER_DAY_SQUARED;
-    satdata.xndd6o = TD2 * 10^ExTD2 * TWOPI / MINUTES_PER_DAY_CUBED;
-    satdata.bstar = BStar;
 
     epochDaytime = epochToUTC(satdata.epoch);
     
@@ -225,7 +231,7 @@ function [f_doppler, recef, vecef, rlla, bistaticRange, bistaticVelocity, ...
         [bistaticRange, bistaticVelocity, R1, R2, llaDIST, ecefDIST] = bistaticParams(latTX, ...
             lonTX, elTX, latRX, lonRX, elRX, recef * 1000, vecef * 1000, f, Re);
 
-        if length(varargin)>= 1
+        if length(varargin)>= 1 & ~isempty(varargin{1})
             RX2 = varargin{1};
             [~, bistaticVelocity2, R1_2, R2_2, ~, ~] = bistaticParams(latTX, ...
                 lonTX, elTX, RX2(1), RX2(2), RX2(3), recef * 1000, vecef * 1000, f, Re);

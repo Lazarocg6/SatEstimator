@@ -126,11 +126,64 @@ end
 % % x_range = 1:length(f_axis);
 % % y_range = 1:length(t_axis);
 
+% % STARLINK3824
+% load('280520251304STARLINK4650detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
 % STARLINK3824
-load('280520251304STARLINK4650detecciones.mat','detections_out','f_axis','t_axis')
+load('300520251358STARLINK2210detecciones.mat','detections_out','f_axis','t_axis')
 x_range = 1:length(f_axis);
 y_range = 1:length(t_axis);
 
+% % STARLINK3824
+% load('300520251413STARLINK30170detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('300520251447STARLINK1057detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('300520251511STARLINK1148detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('300520251524STARLINK1675detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('300520251544SATRLINK2142detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('300520251925STARLINK1588detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+
+% % STARLINK3824
+% load('300520251944STARLINK31658detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+% x_range = 1000:1150;
+% y_range = 1460:1950;
+
+% % STARLINK3824
+% load('300520251957STARLINK32491detecciones_2.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
+% x_range = 850:1100;
+% y_range = 800:1500;
+
+% % STARLINK3824
+% load('300520252024IRIDIUM167detecciones.mat','detections_out','f_axis','t_axis')
+% x_range = 1:length(f_axis);
+% y_range = 1:length(t_axis);
 
 if strcmp(fitterType,'real')
 
@@ -156,7 +209,7 @@ end
 if fitter
     if strcmp(fitterType,'sim')
 
-        seed = now;
+        seed = randi(2^32,1);
 
         if multistat
             [ydataMult, epochdMult,epoch_ogMult,f_dev] = noiseGen(time,ID,RX1,seed,RX2);
@@ -387,8 +440,8 @@ traject2.UserData = [rlla_t(3,:);time];
 % Plot TX and RX positions
 geoplot(ax,latTX, lonTX, 'xr', 'DisplayName', 'TX', 'Tag', 'TX');
 if multistat
-   geoplot(ax,RX1(1), RX1(2), '^r', 'DisplayName', 'RX', 'Tag', 'RX1');
-   geoplot(ax,RX2(1), RX2(2), 'dr', 'DisplayName', 'RX', 'Tag', 'RX2'); 
+   geoplot(ax,RX1(1), RX1(2), '^r', 'DisplayName', 'RX1', 'Tag', 'RX1');
+   geoplot(ax,RX2(1), RX2(2), 'dr', 'DisplayName', 'RX2', 'Tag', 'RX2'); 
 else
    geoplot(ax,latRX, lonRX, '^r', 'DisplayName', 'RX', 'Tag', 'RX');
 end

@@ -1,5 +1,4 @@
 clc
-
 clear rx
 
 info = findsdru;
@@ -10,10 +9,9 @@ DF = 200; % Decimation factor
 BB_sample_rate = MCR/DF;
 gain = 31; % dB
 
-NFB = 6000; % Number of frames in burst
+NFB = 5000; % Number of frames in burst
 
 f = 143.05e6;
-% f = 129.925e6;
 LO_offset = 500e3;
 
 raw_IQ = zeros(NFB,fft_size);
@@ -23,7 +21,7 @@ rx = comm.SDRuReceiver(Platform="B210",SerialNum=info.SerialNum,...
                  SamplesPerFrame=fft_size,MasterClockRate=MCR, ...
                  DecimationFactor=DF,CenterFrequency=f, ...
                  EnableBurstMode=true, NumFramesInBurst=NFB, ...
-                 LocalOscillatorOffset=LO_offset,Gain=gain,ChannelMapping=2);
+                 LocalOscillatorOffset=LO_offset,Gain=gain);
 
 for i = 1:NFB
     [raw_IQ(i,:),~,overrun,t(i,:)] = rx();
@@ -37,5 +35,5 @@ end
 
 release(rx);
 
-
-IQ = flip(fftshift(fft(raw_IQ')',2),2);
+IQ = fftshift(flip(fft(raw_IQ'))');
+% IQ = fftshift(flip(fft((abs(raw_IQ).^2)'))');

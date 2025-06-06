@@ -75,3 +75,4 @@ yarn-error.log
 
 #Simulink
 SDR/slprj/
+*.slxc
